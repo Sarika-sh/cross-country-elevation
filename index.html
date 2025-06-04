@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cross Country Elevation</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    svg {
+      display: block;
+      margin-bottom: 40px;
+    }
+    .axis-label {
+      font-size: 12px;
+      fill: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cross Country Maps</h1>
+
+  <!-- Map SVG -->
+  <svg id="map" width="800" height="400" style="border:1px solid #ccc;"></svg>
+
+  <h2>Elevation Profiles</h2>
+
+  <!-- Elevation Profile SVG -->
+  <svg id="elevation" width="800" height="200" viewBox="0 0 800 200" style="border:1px solid #ccc;">
+    <!-- Optional axis labels -->
+    <text x="400" y="195" text-anchor="middle" class="axis-label">Distance (km)</text>
+    <text x="-100" y="20" transform="rotate(-90)" class="axis-label">Elevation (m)</text>
+  </svg>
+
+  <script src="script.js"defer></script>
+</body>
+</html>
