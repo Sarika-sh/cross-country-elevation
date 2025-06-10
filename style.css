@@ -1,0 +1,124 @@
+/* Base styling for body */
+body {
+  font-family: sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 1rem;
+  font-size: 1rem; /* Base font size */
+}
+
+/* Responsive SVG */
+svg {
+  background: #f8f8f8;
+  border: 1px solid #ccc;
+  width: 100%;  /* Make SVG responsive */
+  height: auto; /* Maintain aspect ratio */
+  max-width: 800px; /* Ensure the max width doesn't exceed 800px */
+  margin: 0 auto; /* Center the SVG horizontally */
+}
+
+/* Axis Labels and Ticks */
+.axis-label {
+  font-size: 12px;
+  fill: #333;
+  dominant-baseline: middle;
+  transition: font-size 0.3s ease; /* Smooth transition for font size */
+}
+
+.axis-tick {
+  stroke: #999;
+  stroke-width: 1;
+}
+
+/* Tooltip */
+#tooltip {
+  position: absolute;
+  background: white;
+  border: 1px solid #aaa;
+  padding: 5px 10px;
+  font-size: 12px;
+  pointer-events: none;
+  display: none;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  max-width: 200px;
+  word-wrap: break-word;
+  opacity: 0; /* Initial opacity */
+  transition: opacity 0.3s ease-in-out;  /* Smooth fade-in/out */
+}
+
+/* When tooltip is shown (using JavaScript to toggle display) */
+#tooltip.show {
+  display: block;
+  opacity: 1; /* Tooltip fades in */
+}
+
+/* Legend Container */
+#legend {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  transition: flex-wrap 0.3s ease; /* Ensures the layout changes smoothly on small screens */
+}
+
+/* Legend Items */
+.legend-item {
+  cursor: pointer;
+  font-weight: bold;
+  transition: color 0.3s ease, text-decoration 0.3s ease, transform 0.3s ease; /* Added transform */
+}
+
+.legend-item:hover {
+  text-decoration: underline;
+  color: #0077cc;
+  transform: scale(1.05);  /* Slightly enlarges the text when hovered */
+}
+
+/* Media Queries for smaller screens */
+
+/* Small screens: Adjust font size, padding, and SVG */
+@media (max-width: 768px) {
+  body {
+    padding: 0.5rem;
+    font-size: 0.9rem; /* Slightly smaller font size on smaller screens */
+  }
+
+  svg {
+    max-width: 100%;  /* Allow the SVG to fill available space */
+    height: 250px; /* Adjust height for better fit on small screens */
+  }
+
+  #tooltip {
+    max-width: 150px;  /* Reduce max-width of the tooltip */
+    font-size: 10px;  /* Smaller font size on mobile */
+  }
+
+  .axis-label {
+    font-size: 10px;  /* Smaller axis labels for small screens */
+  }
+
+  #legend {
+    flex-wrap: wrap;  /* Allow legend items to wrap on small screens */
+    justify-content: space-around; /* Distribute legend items evenly */
+  }
+
+  .legend-item {
+    font-size: 0.9rem;  /* Slightly smaller font size for legend items */
+  }
+}
+
+/* Very small screens (portrait mode phones) */
+@media (max-width: 480px) {
+  body {
+    font-size: 0.85rem; /* Further reduce font size */
+  }
+
+  #tooltip {
+    max-width: 120px;  /* Tooltip gets even smaller on very small screens */
+  }
+
+  svg {
+    height: 200px;  /* Further adjust the height for very small screens */
+  }
+}
