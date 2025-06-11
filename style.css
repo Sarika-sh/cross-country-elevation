@@ -1,13 +1,17 @@
 body {
   font-family: sans-serif;
+  padding: 20px;
   text-align: center;
-  margin: 0;
-  padding: 1rem;
+  background: #fff;
 }
 
 svg {
-  background: #f8f8f8;
   border: 1px solid #ccc;
+  background: #f8f8f8;
+  margin-top: 20px;
+  width: 100%;
+  max-width: 900px;
+  height: auto;
 }
 
 .axis-label {
@@ -16,30 +20,33 @@ svg {
 }
 
 .axis-tick {
-  stroke: #999;
+  stroke: #666;
   stroke-width: 1;
+}
+
+#legend {
+  margin-bottom: 10px;
+}
+
+.legend-item {
+  margin-right: 15px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.legend-item.inactive {
+  opacity: 0.5;
+  text-decoration: line-through;
 }
 
 #tooltip {
   position: absolute;
-  background: white;
-  border: 1px solid #aaa;
-  padding: 5px 10px;
-  font-size: 12px;
+  background: #fff;
+  border: 1px solid #333;
+  padding: 6px;
+  font-size: 13px;
   pointer-events: none;
   display: none;
   z-index: 10;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-#legend {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.legend-item {
-  cursor: pointer;
-  font-weight: bold;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
 }
