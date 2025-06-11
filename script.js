@@ -25,29 +25,26 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 }
 
 function drawAxes(maxDist, minElev, maxElev) {
-  // X axis
-  const xAxisLabel = document.createElementNS(svgNS, "text");
-  xAxisLabel.setAttribute("x", margin.left + plotWidth / 2);
-  xAxisLabel.setAttribute("y", svgHeight - 20);
-  xAxisLabel.setAttribute("text-anchor", "middle");
-  xAxisLabel.setAttribute("class", "axis-label");
-  xAxisLabel.textContent = "Distance (km)";
-  svg.appendChild(xAxisLabel);
+  const xLabel = document.createElementNS(svgNS, "text");
+  xLabel.setAttribute("x", margin.left + plotWidth / 2);
+  xLabel.setAttribute("y", svgHeight - 20);
+  xLabel.setAttribute("text-anchor", "middle");
+  xLabel.setAttribute("class", "axis-label");
+  xLabel.textContent = "Distance (km)";
+  svg.appendChild(xLabel);
 
-  // Y axis
-  const yAxisLabel = document.createElementNS(svgNS, "text");
-  yAxisLabel.setAttribute("x", 15);
-  yAxisLabel.setAttribute("y", margin.top + plotHeight / 2);
-  yAxisLabel.setAttribute("transform", `rotate(-90 15,${margin.top + plotHeight / 2})`);
-  yAxisLabel.setAttribute("text-anchor", "middle");
-  yAxisLabel.setAttribute("class", "axis-label");
-  yAxisLabel.textContent = "Elevation (m)";
-  svg.appendChild(yAxisLabel);
+  const yLabel = document.createElementNS(svgNS, "text");
+  yLabel.setAttribute("x", 15);
+  yLabel.setAttribute("y", margin.top + plotHeight / 2);
+  yLabel.setAttribute("transform", `rotate(-90 15,${margin.top + plotHeight / 2})`);
+  yLabel.setAttribute("text-anchor", "middle");
+  yLabel.setAttribute("class", "axis-label");
+  yLabel.textContent = "Elevation (m)";
+  svg.appendChild(yLabel);
 
-  // X ticks
   for (let i = 0; i <= 10; i++) {
     const x = margin.left + (plotWidth / 10) * i;
-    const distLabel = (maxDist * i / 10).toFixed(1);
+    const label = (maxDist * i / 10).toFixed(1);
 
     const tick = document.createElementNS(svgNS, "line");
     tick.setAttribute("x1", x);
@@ -57,16 +54,15 @@ function drawAxes(maxDist, minElev, maxElev) {
     tick.setAttribute("class", "axis-tick");
     svg.appendChild(tick);
 
-    const label = document.createElementNS(svgNS, "text");
-    label.setAttribute("x", x);
-    label.setAttribute("y", svgHeight - margin.bottom + 22);
-    label.setAttribute("text-anchor", "middle");
-    label.setAttribute("class", "axis-label");
-    label.textContent = `${distLabel} km`;
-    svg.appendChild(label);
+    const text = document.createElementNS(svgNS, "text");
+    text.setAttribute("x", x);
+    text.setAttribute("y", svgHeight - margin.bottom + 22);
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("class", "axis-label");
+    text.textContent = `${label} km`;
+    svg.appendChild(text);
   }
 
-  // Y ticks
   for (let j = 0; j <= 5; j++) {
     const y = margin.top + (plotHeight / 5) * j;
     const elev = (maxElev - ((maxElev - minElev) * j / 5)).toFixed(0);
@@ -92,22 +88,31 @@ function drawAxes(maxDist, minElev, maxElev) {
 async function loadElevation(route) {
   const res = await fetch(route.file);
   const json = await res.json();
-  const coords = json.docs[0].features[0].geometry.coordinates;
 
   const distances = [];
   const elevations = [];
   let totalDist = 0;
 
-  for (let i = 0; i < coords.length; i++) {
-    const [lon, lat, ele] = coords[i];
-    let elevation = typeof ele === "number" ? ele : 0;
-    if (route.name !== "Melbourne") elevation += Math.random() * 5;
-    if (i > 0) {
-      const [prevLon, prevLat] = coords[i - 1];
-      totalDist += haversineDistance(prevLat, prevLon, lat, lon);
+  for (const feature of json.docs[0].features) {
+    const coords = feature.geometry.coordinates;
+
+    for (let i = 0; i < coords.length; i++) {
+      const coord = coords[i];
+      if (!Array.isArray(coord) || coord.length < 2) continue;
+
+      const [lon, lat, ele] = coord;
+      const elevation = (route.name === "Melbourne")
+        ? 0
+        : (typeof ele === "number" ? ele : 0) + Math.random() * 5;
+
+      if (i > 0) {
+        const [prevLon, prevLat] = coords[i - 1];
+        totalDist += haversineDistance(prevLat, prevLon, lat, lon);
+      }
+
+      distances.push(totalDist);
+      elevations.push(elevation);
     }
-    distances.push(totalDist);
-    elevations.push(elevation);
   }
 
   const minElev = Math.min(...elevations);
@@ -116,32 +121,25 @@ async function loadElevation(route) {
 
   const points = distances.map((d, i) => {
     const x = margin.left + (d / totalDist) * plotWidth;
-    const elev = elevations[i];
-    const y = margin.top + plotHeight * (1 - (elev - minElev) / elevRange);
+    const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
     return [x, y];
   });
 
   const pathData = points.map((p, i) => i === 0 ? `M ${p[0]} ${p[1]}` : `L ${p[0]} ${p[1]}`).join(" ");
-  // Smoothed path using quadratic Bézier approximation (optional: keep original for sharper edges)
-const path = document.createElementNS(svgNS, "path");
-path.setAttribute("d", pathData);
-path.setAttribute("stroke", route.color);
-path.setAttribute("fill", "none");
-path.setAttribute("stroke-width", "2");
-path.setAttribute("class", `route-line route-${route.name}`);
-svg.appendChild(path);
+  const path = document.createElementNS(svgNS, "path");
+  path.setAttribute("d", pathData);
+  path.setAttribute("stroke", route.color);
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke-width", "2");
+  path.setAttribute("class", `route-line route-${route.name}`);
+  svg.appendChild(path);
 
-// Add shaded area under the path
-const shadedPath = document.createElementNS(svgNS, "path");
-const shadedData = pathData + ` L ${points[points.length - 1][0]} ${svgHeight - margin.bottom} L ${points[0][0]} ${svgHeight - margin.bottom} Z`;
-shadedPath.setAttribute("d", shadedData);
-shadedPath.setAttribute("fill", route.color);
-shadedPath.setAttribute("opacity", 0.1);
-shadedPath.setAttribute("class", `route-shade route-${route.name}`);
-svg.insertBefore(shadedPath, path); // draw underneath the line
+  const shaded = document.createElementNS(svgNS, "path");
+  shaded.setAttribute("d", pathData + ` L ${points[points.length - 1][0]} ${svgHeight - margin.bottom} L ${points[0][0]} ${svgHeight - margin.bottom} Z`);
+  shaded.setAttribute("fill", route.color);
+  shaded.setAttribute("opacity", 0.1);
+  svg.insertBefore(shaded, path);
 
-
-  // Tooltip circles
   points.forEach((p, i) => {
     const circle = document.createElementNS(svgNS, "circle");
     circle.setAttribute("cx", p[0]);
@@ -162,12 +160,13 @@ svg.insertBefore(shadedPath, path); // draw underneath the line
       tooltip.innerHTML = `<strong>${route.name}</strong><br>Distance: ${distances[i].toFixed(2)} km<br>Elevation: ${elevations[i].toFixed(1)} m`;
       tooltip.style.display = "block";
     });
-    circle.addEventListener("mouseleave", () => (tooltip.style.display = "none"));
+    circle.addEventListener("mouseleave", () => {
+      tooltip.style.display = "none";
+    });
 
     svg.appendChild(circle);
   });
 
-  // Legend
   const legend = document.getElementById("legend");
   const legendItem = document.createElement("span");
   legendItem.className = "legend-item";
@@ -193,10 +192,7 @@ async function drawAllRoutes() {
     allElevs.push(...elevations);
     allDists.push(...distances);
   }
-  const minElev = Math.min(...allElevs);
-  const maxElev = Math.max(...allElevs);
-  const maxDist = Math.max(...allDists);
-  drawAxes(maxDist, minElev, maxElev);
+  drawAxes(Math.max(...allDists), Math.min(...allElevs), Math.max(...allElevs));
 }
 
 drawAllRoutes();
