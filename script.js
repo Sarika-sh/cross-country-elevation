@@ -102,9 +102,9 @@ async function loadElevation(route) {
 
       const [lon, lat, ele = 0] = coord;
       const elevation = typeof ele === "number" ? ele : 0;
-
-      if (i > 0) {
-        const [prevLon, prevLat] = coords[i - 1];
+  
+      if (i > 0 || distances.length > 0) {
+      const [prevLon, prevLat] = i > 0 ? coords[i - 1] : coords[0];
         totalDist += haversineDistance(prevLat, prevLon, lat, lon);
       }
 
