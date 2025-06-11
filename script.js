@@ -100,10 +100,8 @@ async function loadElevation(route) {
       const coord = coords[i];
       if (!Array.isArray(coord) || coord.length < 2) continue;
 
-      const [lon, lat, ele] = coord;
-      const elevation = (route.name === "Melbourne")
-        ? 0
-        : (typeof ele === "number" ? ele : 0) + Math.random() * 5;
+      const [lon, lat, ele = 0] = coord;
+      const elevation = typeof ele === "number" ? ele : 0;
 
       if (i > 0) {
         const [prevLon, prevLat] = coords[i - 1];
