@@ -124,6 +124,8 @@ async function loadElevation(route) {
   const maxElev = Math.max(...elevations);
   const elevRange = maxElev - minElev || 1;
 
+  console.log("City min max ele:", minElev, maxElev, elevRange);
+  
   const points = distances.map((d, i) => {
     const x = margin.left + (d / totalDist) * plotWidth;
     const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
