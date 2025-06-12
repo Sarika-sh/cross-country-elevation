@@ -118,14 +118,19 @@ async function fetchRouteData(route) {
   let totalDist = 0;
 
   for (let i = 0; i < coords.length; i++) {
-    const [lon, lat, ele = 0] = coords[i];
+    const coord = coords[i];
+
+    // Ensure we have a valid number of values (longitude, latitude, elevation)
+    const lon = coord[0];
+    const lat = coord[1];
+    const ele = coord[2] || 0;
 
     // Elevation handling:
     let elevation = 0;
     if (route.name === "Melbourne") {
       elevation = 0;  // No elevation for Melbourne
     } else if (route.name === "Bramham") {
-      elevation = Math.min(ele, 170);  // Cap elevation at 170m for Bramham
+      elevation = typeof ele === "number" ? ele : 0; // Use Bramham's actual elevation
     } else {
       elevation = typeof ele === "number" ? ele : 0; // Normal elevation for Bromont
     }
@@ -212,6 +217,17 @@ async function drawAllRoutes() {
     });
     legend.appendChild(legendItem);
   }
+}
+
+// Function to smooth the elevation data for cleaner graph
+function smoothElevationData(elevations) {
+  const smoothed = [];
+  for (let i = 0; i < elevations.length; i++) {
+    const prev = elevations[i - 1] || elevations[i];
+    const next = elevations[i + 1] || elevations[i];
+    smoothed.push((prev + elevations[i] + next) / 3);
+  }
+  return smoothed;
 }
 
 // Call the drawAllRoutes function when the page is ready
