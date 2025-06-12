@@ -4,6 +4,12 @@ const defaultRoutes = [
   { file: "https://api.crosscountryapp.com/courses/vdwk2d/geometries", id: "vdwk2d", color: "green", name: "Bramham" }
 ];
 
+const defaultRoutes = [
+  { id: "gcptey", color: "blue", name: "Melbourne" },
+  { id: "wplcez", color: "red", name: "Bromont" },
+  { id: "vdwk2d", color: "green", name: "Bramham" }
+];
+
 function getRoutesFromQuery() {
   const params = new URLSearchParams(window.location.search);
   const ids = params.get("ids");
