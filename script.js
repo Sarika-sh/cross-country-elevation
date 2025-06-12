@@ -124,18 +124,18 @@ async function fetchRouteData(route) {
   for (let i = 0; i < coords.length; i++) {
     const coord = coords[i];
 
-    // Check if the coordinate is an array with at least 3 elements (lon, lat, elevation)
+    // Validate coordinate entry
     if (!Array.isArray(coord) || coord.length < 3) {
       console.warn(`Malformed coordinate entry at index ${i}:`, coord);
-      continue; // Skip malformed entry and move to the next
+      continue; // Skip malformed coordinate entry
     }
 
     const [lon, lat, ele = 0] = coord;
 
-    // Set elevation to 0 for Melbourne, else use the actual elevation
+    // For Melbourne, explicitly set elevation to 0
     const elevation = route.name === "Melbourne" ? 0 : ele;
 
-    // Calculate the distance for this coordinate if not the first one
+    // Calculate the distance for each coordinate pair
     if (i > 0) {
       const [prevLon, prevLat] = coords[i - 1];
       totalDist += haversineDistance(prevLat, prevLon, lat, lon);
@@ -149,45 +149,37 @@ async function fetchRouteData(route) {
 }
 
 async function drawAllRoutes() {
-  const allData = await Promise.all(routes.map(fetchRouteData));
+  const routeData = await Promise.all(routes.map(fetchRouteData));
 
-  const allElevs = allData.flatMap(r => r.elevations);
-  const minElev = Math.min(...allElevs);
-  const maxElev = Math.max(...allElevs);
-  const maxDist = Math.max(...allData.map(r => r.totalDist));
+  let maxDist = 0;
+  let minElev = Math.min(...routeData.flatMap(r => r.elevations));
+  let maxElev = Math.max(...routeData.flatMap(r => r.elevations));
+
+  routeData.forEach(({ distances, elevations }) => {
+    maxDist = Math.max(maxDist, distances[distances.length - 1]);
+  });
 
   drawAxes(maxDist, minElev, maxElev);
 
-  for (const { route, distances, elevations, totalDist } of allData) {
-    const elevRange = maxElev - minElev || 1;
-    const points = distances.map((d, i) => {
-      const x = margin.left + (d / totalDist) * plotWidth;
-      const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
-      return [x, y];
-    });
+  routeData.forEach(({ route, distances, elevations }) => {
+    const line = document.createElementNS(svgNS, "polyline");
+    const points = distances.map((d, i) => `${margin.left + (plotWidth * d / maxDist)},${margin.top + (plotHeight * (maxElev - elevations[i]) / (maxElev - minElev))}`);
+    line.setAttribute("points", points.join(" "));
+    line.setAttribute("stroke", route.color);
+    line.setAttribute("fill", "none");
+    line.setAttribute("class", "route-line");
+    svg.appendChild(line);
 
-    const pathData = points.map((p, i) => i === 0 ? `M ${p[0]} ${p[1]}` : `L ${p[0]} ${p[1]}`).join(" ");
-    const path = document.createElementNS(svgNS, "path");
-    path.setAttribute("d", pathData);
-    path.setAttribute("stroke", route.color);
-    path.setAttribute("fill", "none");
-    path.setAttribute("stroke-width", "2");
-    path.setAttribute("class", `route-line route-${route.name}`);
-    svg.appendChild(path);
-
-    const shaded = document.createElementNS(svgNS, "path");
-    shaded.setAttribute("d", `${pathData} L ${points.at(-1)[0]} ${svgHeight - margin.bottom} L ${points[0][0]} ${svgHeight - margin.bottom} Z`);
-    shaded.setAttribute("fill", route.color);
-    shaded.setAttribute("opacity", 0.1);
-    svg.insertBefore(shaded, path);
-
-    points.forEach((p, i) => {
+    // Add route points as small circles
+    distances.forEach((dist, i) => {
+      const p = [margin.left + (plotWidth * dist / maxDist), margin.top + (plotHeight * (maxElev - elevations[i]) / (maxElev - minElev))];
       const circle = document.createElementNS(svgNS, "circle");
       circle.setAttribute("cx", p[0]);
       circle.setAttribute("cy", p[1]);
-      circle.setAttribute("r", 5);
+      circle.setAttribute("r", 3);
       circle.setAttribute("fill", route.color);
-      circle.setAttribute("opacity", 0);
+      circle.setAttribute("class", "route-point");
+
       circle.addEventListener("mouseenter", () => {
         const pt = svg.createSVGPoint();
         pt.x = p[0];
@@ -198,12 +190,14 @@ async function drawAllRoutes() {
         tooltip.style.display = "block";
         tooltip.innerHTML = `${route.name}<br />${(distances[i] / 1000).toFixed(2)} km<br />${elevations[i]} m`;
       });
+
       circle.addEventListener("mouseleave", () => {
         tooltip.style.display = "none";
       });
+
       svg.appendChild(circle);
     });
-  }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", drawAllRoutes);
