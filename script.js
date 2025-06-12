@@ -112,6 +112,12 @@ async function loadElevation(route) {
     elevations.push(elevation);
   }
 }
+
+  if (route.name === "Bramham") {
+  console.log("Bramham elevations (first 10):", elevations.slice(0, 10));
+  console.log("Bramham max elevation:", Math.max(...elevations));
+}
+
   const minElev = Math.min(...elevations);
   const maxElev = Math.max(...elevations);
   const elevRange = maxElev - minElev || 1;
