@@ -5,6 +5,7 @@ body {
   background: #fff;
 }
 
+/* Styling for the SVG container */
 svg {
   border: 1px solid #ccc;
   background: #f8f8f8;
@@ -14,20 +15,23 @@ svg {
   height: auto;
 }
 
+/* Axis labels */
 .axis-label {
   font-size: 12px;
   fill: #333;
-   user-select: none;
+  user-select: none;
 }
 
+/* Axis ticks */
 .axis-tick {
   stroke: #333;
   stroke-width: 1;
 }
 
+/* Legend styling */
 #legend {
   margin-bottom: 10px;
-   user-select: none;
+  user-select: none;
 }
 
 .legend-item {
@@ -40,6 +44,7 @@ svg {
   text-decoration: line-through;
 }
 
+/* Tooltip styling */
 #tooltip {
   position: absolute;
   background: rgba(255,255,255,0.9);
@@ -53,3 +58,15 @@ svg {
   user-select: none;
 }
 
+/* Styling for route points (small circles on the graph) */
+.route-point {
+  cursor: pointer;
+}
+
+.route-line {
+  stroke-width: 2;
+}
+
+.route-line:hover {
+  stroke-width: 3;
+}
