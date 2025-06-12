@@ -35,9 +35,8 @@ const svgHeight = svg.viewBox.baseVal.height;
 const plotWidth = svgWidth - margin.left - margin.right;
 const plotHeight = svgHeight - margin.top - margin.bottom;
 
-// Haversine distance function
 function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radius of the Earth in km
+  const R = 6371;
   const toRad = d => d * Math.PI / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
@@ -46,102 +45,31 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function drawAxes(maxDist, minElev, maxElev) {
-  const elevRange = maxElev - minElev || 1;
-  for (let i = 0; i <= 10; i++) {
-    const x = margin.left + (plotWidth / 10) * i;
-    const label = (maxDist * i / 10).toFixed(1);
-    const tick = document.createElementNS(svgNS, "line");
-    tick.setAttribute("x1", x);
-    tick.setAttribute("y1", svgHeight - margin.bottom);
-    tick.setAttribute("x2", x);
-    tick.setAttribute("y2", svgHeight - margin.bottom + 6);
-    tick.setAttribute("class", "axis-tick");
-    svg.appendChild(tick);
-
-    const text = document.createElementNS(svgNS, "text");
-    text.setAttribute("x", x);
-    text.setAttribute("y", svgHeight - margin.bottom + 22);
-    text.setAttribute("text-anchor", "middle");
-    text.setAttribute("class", "axis-label");
-    text.textContent = `${label} km`;
-    svg.appendChild(text);
-  }
-
-  for (let j = 0; j <= 5; j++) {
-    const y = margin.top + (plotHeight / 5) * j;
-    const elev = (maxElev - (elevRange * j / 5)).toFixed(0);
-    const tick = document.createElementNS(svgNS, "line");
-    tick.setAttribute("x1", margin.left - 6);
-    tick.setAttribute("y1", y);
-    tick.setAttribute("x2", margin.left);
-    tick.setAttribute("y2", y);
-    tick.setAttribute("class", "axis-tick");
-    svg.appendChild(tick);
-
-    const label = document.createElementNS(svgNS, "text");
-    label.setAttribute("x", margin.left - 10);
-    label.setAttribute("y", y + 4);
-    label.setAttribute("text-anchor", "end");
-    label.setAttribute("class", "axis-label");
-    label.textContent = `${elev} m`;
-    svg.appendChild(label);
-  }
-
-  const xLabel = document.createElementNS(svgNS, "text");
-  xLabel.setAttribute("x", margin.left + plotWidth / 2);
-  xLabel.setAttribute("y", svgHeight - 20);
-  xLabel.setAttribute("text-anchor", "middle");
-  xLabel.setAttribute("class", "axis-label");
-  xLabel.textContent = "Distance (km)";
-  svg.appendChild(xLabel);
-
-  const yLabel = document.createElementNS(svgNS, "text");
-  yLabel.setAttribute("x", 15);
-  yLabel.setAttribute("y", margin.top + plotHeight / 2);
-  yLabel.setAttribute("transform", `rotate(-90 15,${margin.top + plotHeight / 2})`);
-  yLabel.setAttribute("text-anchor", "middle");
-  yLabel.setAttribute("class", "axis-label");
-  yLabel.textContent = "Elevation (m)";
-  svg.appendChild(yLabel);
-}
-
 async function fetchRouteData(route) {
   const res = await fetch(route.file);
   const json = await res.json();
-
-  // Ensure coords is an array, even if the response structure is unexpected
-  const coords = json.docs?.flatMap(doc => doc.features?.flatMap(f => f.geometry?.coordinates || [])) || [];
-
+  const coords = json.docs.flatMap(doc => doc.features.flatMap(f => f.geometry.coordinates));
+  
   const distances = [];
   const elevations = [];
   let totalDist = 0;
 
   for (let i = 0; i < coords.length; i++) {
     const coord = coords[i];
+    if (Array.isArray(coord) && coord.length >= 3) {
+      const [lon, lat, ele = 0] = coord;
+      const elevation = route.name === "Melbourne" ? 0 : ele;
 
-    // Ensure we have a valid number of values (longitude, latitude, elevation)
-    const lon = coord[0];
-    const lat = coord[1];
-    const ele = coord[2] || 0;
+      if (i > 0) {
+        const [prevLon, prevLat] = coords[i - 1];
+        totalDist += haversineDistance(prevLat, prevLon, lat, lon);
+      }
 
-    // Elevation handling:
-    let elevation = 0;
-    if (route.name === "Melbourne") {
-      elevation = 0;  // No elevation for Melbourne
-    } else if (route.name === "Bramham") {
-      elevation = typeof ele === "number" ? ele : 0; // Use Bramham's actual elevation
+      distances.push(totalDist);
+      elevations.push(elevation);
     } else {
-      elevation = typeof ele === "number" ? ele : 0; // Normal elevation for Bromont
+      console.warn(`Malformed coordinate entry at index ${i}:`, coord);
     }
-
-    if (i > 0) {
-      const [prevLon, prevLat] = coords[i - 1];
-      totalDist += haversineDistance(prevLat, prevLon, lat, lon);
-    }
-
-    distances.push(totalDist);
-    elevations.push(elevation);
   }
 
   return { route, coords, distances, elevations, totalDist };
@@ -159,13 +87,9 @@ async function drawAllRoutes() {
 
   for (const { route, distances, elevations, totalDist } of allData) {
     const elevRange = maxElev - minElev || 1;
-
-    // Smooth out elevation data to reduce noise
-    const smoothedElevations = smoothElevationData(elevations);
-
     const points = distances.map((d, i) => {
       const x = margin.left + (d / totalDist) * plotWidth;
-      const y = margin.top + plotHeight * (1 - (smoothedElevations[i] - minElev) / elevRange);
+      const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
       return [x, y];
     });
 
@@ -192,43 +116,34 @@ async function drawAllRoutes() {
       circle.setAttribute("fill", route.color);
       circle.setAttribute("opacity", 0);
       circle.addEventListener("mouseenter", () => {
-        const pt = svg.createSVGPoint();
-        pt.x = p[0]; pt.y = p[1];
-        const screenPt = pt.matrixTransform(svg.getScreenCTM());
-        tooltip.style.left = `${screenPt.x + 10}px`;
-        tooltip.style.top = `${screenPt.y}px`;
-        tooltip.innerHTML = `<strong>${route.name}</strong><br>Distance: ${distances[i].toFixed(2)} km<br>Elevation: ${smoothedElevations[i].toFixed(1)} m`;
+        const ptDist = distances[i].toFixed(2);
+        const ptElev = elevations[i].toFixed(1);
+        tooltip.textContent = `${route.name}: ${ptDist} km - ${ptElev} m`;
         tooltip.style.display = "block";
+        tooltip.style.left = `${event.pageX + 5}px`;
+        tooltip.style.top = `${event.pageY + 5}px`;
       });
-      circle.addEventListener("mouseleave", () => tooltip.style.display = "none");
+      circle.addEventListener("mouseleave", () => {
+        tooltip.style.display = "none";
+      });
       svg.appendChild(circle);
     });
-
-    const legend = document.getElementById("legend");
-    const legendItem = document.createElement("span");
-    legendItem.className = "legend-item";
-    legendItem.style.color = route.color;
-    legendItem.textContent = route.name;
-    legendItem.addEventListener("click", () => {
-      const path = document.querySelector(`.route-${route.name}`);
-      const visible = path.style.display !== "none";
-      path.style.display = visible ? "none" : "inline";
-      legendItem.classList.toggle("inactive", visible);
-    });
-    legend.appendChild(legendItem);
   }
 }
 
-// Function to smooth the elevation data for cleaner graph
-function smoothElevationData(elevations) {
-  const smoothed = [];
-  for (let i = 0; i < elevations.length; i++) {
-    const prev = elevations[i - 1] || elevations[i];
-    const next = elevations[i + 1] || elevations[i];
-    smoothed.push((prev + elevations[i] + next) / 3);
-  }
-  return smoothed;
+function drawAxes(maxDist, minElev, maxElev) {
+  const xScale = d3.scaleLinear().domain([0, maxDist]).range([margin.left, margin.left + plotWidth]);
+  const yScale = d3.scaleLinear().domain([maxElev, minElev]).range([margin.top, margin.top + plotHeight]);
+
+  const xAxis = d3.axisBottom(xScale).ticks(5);
+  const yAxis = d3.axisLeft(yScale).ticks(5);
+
+  const xAxisGroup = svg.appendChild(document.createElementNS(svgNS, "g"));
+  xAxisGroup.setAttribute("transform", `translate(0, ${svgHeight - margin.bottom})`);
+  d3.select(xAxisGroup).call(xAxis);
+
+  const yAxisGroup = svg.appendChild(document.createElementNS(svgNS, "g"));
+  d3.select(yAxisGroup).call(yAxis);
 }
 
-// Call the drawAllRoutes function when the page is ready
 drawAllRoutes();
