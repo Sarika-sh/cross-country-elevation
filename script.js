@@ -52,28 +52,34 @@ async function fetchRouteData(route) {
   
   const distances = [];
   const elevations = [];
-  let totalDist = 0;
 
+  let totalDist = 0;
   for (let i = 0; i < coords.length; i++) {
     const coord = coords[i];
-    if (Array.isArray(coord) && coord.length >= 3) {
-      const [lon, lat, ele = 0] = coord;
-      const elevation = route.name === "Melbourne" ? 0 : ele;
-
-      if (i > 0) {
-        const [prevLon, prevLat] = coords[i - 1];
-        totalDist += haversineDistance(prevLat, prevLon, lat, lon);
-      }
-
-      distances.push(totalDist);
-      elevations.push(elevation);
-    } else {
+    
+    // Check if coordinate is malformed
+    if (coord.length < 3) {
       console.warn(`Malformed coordinate entry at index ${i}:`, coord);
+      continue; // Skip malformed entry
     }
+
+    const [lon, lat, ele = 0] = coord;
+
+    // If the route is Melbourne, set elevation to 0
+    const elevation = route.name === "Melbourne" ? 0 : ele;
+
+    if (i > 0) {
+      const [prevLon, prevLat] = coords[i - 1];
+      totalDist += haversineDistance(prevLat, prevLon, lat, lon);
+    }
+
+    distances.push(totalDist);
+    elevations.push(elevation);
   }
 
   return { route, coords, distances, elevations, totalDist };
 }
+
 
 async function drawAllRoutes() {
   const allData = await Promise.all(routes.map(fetchRouteData));
