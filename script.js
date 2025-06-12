@@ -124,13 +124,19 @@ async function loadElevation(route) {
   const elevRange = maxElev - minElev || 1;
 
   console.log("City min max ele:", minElev, maxElev, elevRange);
+
   
   const points = distances.map((d, i) => {
     const x = margin.left + (d / totalDist) * plotWidth;
     const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
-    return [x, y];
-  });
 
+      // If the route is Bramham, 
+      if (route.name === "Bramham") {
+        console.log("Bramham:", x, (elevations[i] - minElev) / elevRange);
+      }
+        return [x, y];
+  });
+  
   const pathData = points.map((p, i) => i === 0 ? `M ${p[0]} ${p[1]}` : `L ${p[0]} ${p[1]}`).join(" ");
   const path = document.createElementNS(svgNS, "path");
   path.setAttribute("d", pathData);
