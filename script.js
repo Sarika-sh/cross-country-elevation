@@ -7,16 +7,19 @@ const defaultRoutes = [
 function getRoutesFromQuery() {
   const params = new URLSearchParams(window.location.search);
   const ids = params.get("ids");
-  if (!ids) return defaultRoutes.map(r => ({ ...r, file: `https://api.crosscountryapp.com/courses/${r.id}/geometries` }));
-
-  const idList = ids.split(",");
-  return idList.map((id, index) => {
+  if (!ids) return defaultRoutes.map(({ id, color, name }) => ({
+    id,
+    name,
+    color,
+    file: `https://api.crosscountryapp.com/courses/${id}/geometries`
+  }));
+  return ids.split(",").map((id, i) => {
     const match = defaultRoutes.find(r => r.id === id);
     return {
       id,
-      file: `https://api.crosscountryapp.com/courses/${id}/geometries`,
-      color: match?.color || ["blue", "red", "green", "purple"][index % 4],
-      name: match?.name || `Course ${id}`
+      name: match?.name || `Course ${id}`,
+      color: match?.color || ["blue", "red", "green", "purple", "orange"][i % 5],
+      file: `https://api.crosscountryapp.com/courses/${id}/geometries`
     };
   });
 }
@@ -25,6 +28,7 @@ const routes = getRoutesFromQuery();
 const svg = document.getElementById("elevation");
 const tooltip = document.getElementById("tooltip");
 const svgNS = "http://www.w3.org/2000/svg";
+
 const margin = { top: 20, right: 20, bottom: 60, left: 70 };
 const svgWidth = svg.viewBox.baseVal.width;
 const svgHeight = svg.viewBox.baseVal.height;
@@ -33,7 +37,7 @@ const plotHeight = svgHeight - margin.top - margin.bottom;
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
-  const toRad = deg => deg * Math.PI / 180;
+  const toRad = d => d * Math.PI / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat / 2) ** 2 +
@@ -42,27 +46,10 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 }
 
 function drawAxes(maxDist, minElev, maxElev) {
-  const xLabel = document.createElementNS(svgNS, "text");
-  xLabel.setAttribute("x", margin.left + plotWidth / 2);
-  xLabel.setAttribute("y", svgHeight - 20);
-  xLabel.setAttribute("text-anchor", "middle");
-  xLabel.setAttribute("class", "axis-label");
-  xLabel.textContent = "Distance (km)";
-  svg.appendChild(xLabel);
-
-  const yLabel = document.createElementNS(svgNS, "text");
-  yLabel.setAttribute("x", 15);
-  yLabel.setAttribute("y", margin.top + plotHeight / 2);
-  yLabel.setAttribute("transform", `rotate(-90 15,${margin.top + plotHeight / 2})`);
-  yLabel.setAttribute("text-anchor", "middle");
-  yLabel.setAttribute("class", "axis-label");
-  yLabel.textContent = "Elevation (m)";
-  svg.appendChild(yLabel);
-
+  const elevRange = maxElev - minElev || 1;
   for (let i = 0; i <= 10; i++) {
     const x = margin.left + (plotWidth / 10) * i;
     const label = (maxDist * i / 10).toFixed(1);
-
     const tick = document.createElementNS(svgNS, "line");
     tick.setAttribute("x1", x);
     tick.setAttribute("y1", svgHeight - margin.bottom);
@@ -82,8 +69,7 @@ function drawAxes(maxDist, minElev, maxElev) {
 
   for (let j = 0; j <= 5; j++) {
     const y = margin.top + (plotHeight / 5) * j;
-    const elev = (maxElev - ((maxElev - minElev) * j / 5)).toFixed(0);
-
+    const elev = (maxElev - (elevRange * j / 5)).toFixed(0);
     const tick = document.createElementNS(svgNS, "line");
     tick.setAttribute("x1", margin.left - 6);
     tick.setAttribute("y1", y);
@@ -100,111 +86,113 @@ function drawAxes(maxDist, minElev, maxElev) {
     label.textContent = `${elev} m`;
     svg.appendChild(label);
   }
+
+  const xLabel = document.createElementNS(svgNS, "text");
+  xLabel.setAttribute("x", margin.left + plotWidth / 2);
+  xLabel.setAttribute("y", svgHeight - 20);
+  xLabel.setAttribute("text-anchor", "middle");
+  xLabel.setAttribute("class", "axis-label");
+  xLabel.textContent = "Distance (km)";
+  svg.appendChild(xLabel);
+
+  const yLabel = document.createElementNS(svgNS, "text");
+  yLabel.setAttribute("x", 15);
+  yLabel.setAttribute("y", margin.top + plotHeight / 2);
+  yLabel.setAttribute("transform", `rotate(-90 15,${margin.top + plotHeight / 2})`);
+  yLabel.setAttribute("text-anchor", "middle");
+  yLabel.setAttribute("class", "axis-label");
+  yLabel.textContent = "Elevation (m)";
+  svg.appendChild(yLabel);
 }
 
-async function loadElevation(route) {
+async function fetchRouteData(route) {
   const res = await fetch(route.file);
   const json = await res.json();
+  const coords = json.docs.flatMap(doc => doc.features.flatMap(f => f.geometry.coordinates));
   const distances = [];
   const elevations = [];
+
   let totalDist = 0;
-
-  for (const feature of json.docs[0].features) {
-    const coords = feature.geometry.coordinates;
-    for (let i = 0; i < coords.length; i++) {
-      const coord = coords[i];
-      if (!Array.isArray(coord) || coord.length < 2) continue;
-
-      const [lon, lat, ele = 0] = coord;
-      const elevation = route.name === "Melbourne" ? 0 : (typeof ele === "number" ? ele : 0);
-
-      if (i > 0 || distances.length > 0) {
-        const [prevLon, prevLat] = i > 0 ? coords[i - 1] : coords[0];
-        totalDist += haversineDistance(prevLat, prevLon, lat, lon);
-      }
-
-      distances.push(totalDist);
-      elevations.push(elevation);
+  for (let i = 0; i < coords.length; i++) {
+    const [lon, lat, ele = 0] = coords[i];
+    const elevation = route.name === "Melbourne" ? 0 : (typeof ele === "number" ? ele : 0);
+    if (i > 0) {
+      const [prevLon, prevLat] = coords[i - 1];
+      totalDist += haversineDistance(prevLat, prevLon, lat, lon);
     }
+    distances.push(totalDist);
+    elevations.push(elevation);
   }
 
-  const minElev = Math.min(...elevations);
-  const maxElev = Math.max(...elevations);
-  const elevRange = maxElev - minElev || 1;
-
-  const points = distances.map((d, i) => {
-    const x = margin.left + (d / totalDist) * plotWidth;
-    const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
-    return [x, y];
-  });
-
-  const pathData = points.map((p, i) => i === 0 ? `M ${p[0]} ${p[1]}` : `L ${p[0]} ${p[1]}`).join(" ");
-  const path = document.createElementNS(svgNS, "path");
-  path.setAttribute("d", pathData);
-  path.setAttribute("stroke", route.color);
-  path.setAttribute("fill", "none");
-  path.setAttribute("stroke-width", "2");
-  path.setAttribute("class", `route-line route-${route.name}`);
-  svg.appendChild(path);
-
-  const shaded = document.createElementNS(svgNS, "path");
-  shaded.setAttribute("d", pathData + ` L ${points[points.length - 1][0]} ${svgHeight - margin.bottom} L ${points[0][0]} ${svgHeight - margin.bottom} Z`);
-  shaded.setAttribute("fill", route.color);
-  shaded.setAttribute("opacity", 0.1);
-  svg.insertBefore(shaded, path);
-
-  points.forEach((p, i) => {
-    const circle = document.createElementNS(svgNS, "circle");
-    circle.setAttribute("cx", p[0]);
-    circle.setAttribute("cy", p[1]);
-    circle.setAttribute("r", 5);
-    circle.setAttribute("fill", route.color);
-    circle.setAttribute("opacity", 0);
-    circle.style.cursor = "pointer";
-
-    circle.addEventListener("mouseenter", () => {
-      const pt = svg.createSVGPoint();
-      pt.x = p[0];
-      pt.y = p[1];
-      const screenPt = pt.matrixTransform(svg.getScreenCTM());
-
-      tooltip.style.left = `${screenPt.x + 10}px`;
-      tooltip.style.top = `${screenPt.y}px`;
-      tooltip.innerHTML = `<strong>${route.name}</strong><br>Distance: ${distances[i].toFixed(2)} km<br>Elevation: ${elevations[i].toFixed(1)} m`;
-      tooltip.style.display = "block";
-    });
-    circle.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
-    });
-    svg.appendChild(circle);
-  });
-
-  const legend = document.getElementById("legend");
-  const legendItem = document.createElement("span");
-  legendItem.className = "legend-item";
-  legendItem.style.color = route.color;
-  legendItem.textContent = route.name;
-  legendItem.dataset.route = route.name;
-  legendItem.addEventListener("click", () => {
-    const path = document.querySelector(`.route-${route.name}`);
-    const visible = path.style.display !== "none";
-    path.style.display = visible ? "none" : "inline";
-    legendItem.classList.toggle("inactive", visible);
-  });
-  legend.appendChild(legendItem);
-
-  return { elevations, distances };
+  return { route, coords, distances, elevations, totalDist };
 }
 
 async function drawAllRoutes() {
-  const allElevs = [];
-  const allDists = [];
-  for (const route of routes) {
-    const { elevations, distances } = await loadElevation(route);
-    allElevs.push(...elevations);
-    allDists.push(...distances);
+  const allData = await Promise.all(routes.map(fetchRouteData));
+
+  const allElevs = allData.flatMap(r => r.elevations);
+  const minElev = Math.min(...allElevs);
+  const maxElev = Math.max(...allElevs);
+  const maxDist = Math.max(...allData.map(r => r.totalDist));
+
+  drawAxes(maxDist, minElev, maxElev);
+
+  for (const { route, distances, elevations, totalDist } of allData) {
+    const elevRange = maxElev - minElev || 1;
+    const points = distances.map((d, i) => {
+      const x = margin.left + (d / totalDist) * plotWidth;
+      const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
+      return [x, y];
+    });
+
+    const pathData = points.map((p, i) => i === 0 ? `M ${p[0]} ${p[1]}` : `L ${p[0]} ${p[1]}`).join(" ");
+    const path = document.createElementNS(svgNS, "path");
+    path.setAttribute("d", pathData);
+    path.setAttribute("stroke", route.color);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke-width", "2");
+    path.setAttribute("class", `route-line route-${route.name}`);
+    svg.appendChild(path);
+
+    const shaded = document.createElementNS(svgNS, "path");
+    shaded.setAttribute("d", `${pathData} L ${points.at(-1)[0]} ${svgHeight - margin.bottom} L ${points[0][0]} ${svgHeight - margin.bottom} Z`);
+    shaded.setAttribute("fill", route.color);
+    shaded.setAttribute("opacity", 0.1);
+    svg.insertBefore(shaded, path);
+
+    points.forEach((p, i) => {
+      const circle = document.createElementNS(svgNS, "circle");
+      circle.setAttribute("cx", p[0]);
+      circle.setAttribute("cy", p[1]);
+      circle.setAttribute("r", 5);
+      circle.setAttribute("fill", route.color);
+      circle.setAttribute("opacity", 0);
+      circle.addEventListener("mouseenter", () => {
+        const pt = svg.createSVGPoint();
+        pt.x = p[0]; pt.y = p[1];
+        const screenPt = pt.matrixTransform(svg.getScreenCTM());
+        tooltip.style.left = `${screenPt.x + 10}px`;
+        tooltip.style.top = `${screenPt.y}px`;
+        tooltip.innerHTML = `<strong>${route.name}</strong><br>Distance: ${distances[i].toFixed(2)} km<br>Elevation: ${elevations[i].toFixed(1)} m`;
+        tooltip.style.display = "block";
+      });
+      circle.addEventListener("mouseleave", () => tooltip.style.display = "none");
+      svg.appendChild(circle);
+    });
+
+    const legend = document.getElementById("legend");
+    const legendItem = document.createElement("span");
+    legendItem.className = "legend-item";
+    legendItem.style.color = route.color;
+    legendItem.textContent = route.name;
+    legendItem.addEventListener("click", () => {
+      const path = document.querySelector(`.route-${route.name}`);
+      const visible = path.style.display !== "none";
+      path.style.display = visible ? "none" : "inline";
+      legendItem.classList.toggle("inactive", visible);
+    });
+    legend.appendChild(legendItem);
   }
-  drawAxes(Math.max(...allDists), Math.min(...allElevs), Math.max(...allElevs));
 }
 
 drawAllRoutes();
