@@ -1,7 +1,7 @@
-const routes = [
-  { file: "https://api.crosscountryapp.com/courses/gcptey/geometries", color: "blue", name: "Melbourne" },
-  { file: "https://api.crosscountryapp.com/courses/wplcez/geometries", color: "red", name: "Bromont" },
-  { file: "https://api.crosscountryapp.com/courses/vdwk2d/geometries", color: "green", name: "Bramham" }
+const defaultRoutes = [
+  { file: "https://api.crosscountryapp.com/courses/gcptey/geometries", id: "gcptey", color: "blue", name: "Melbourne" },
+  { file: "https://api.crosscountryapp.com/courses/wplcez/geometries", id: "wplcez", color: "red", name: "Bromont" },
+  { file: "https://api.crosscountryapp.com/courses/vdwk2d/geometries", id: "vdwk2d", color: "green", name: "Bramham" }
 ];
 
 const svg = document.getElementById("elevation");
@@ -14,8 +14,34 @@ const svgHeight = svg.viewBox.baseVal.height;
 const plotWidth = svgWidth - margin.left - margin.right;
 const plotHeight = svgHeight - margin.top - margin.bottom;
 
+function getRoutesFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const idsParam = params.get("ids");
+
+  const fallbackColors = ["blue", "red", "green", "purple", "orange"];
+
+  if (!idsParam) return defaultRoutes.map(route => ({
+    ...route,
+    file: `https://api.crosscountryapp.com/courses/${route.id}/geometries`
+  }));
+
+  const ids = idsParam.split(",");
+  return ids.map((id, index) => {
+    const known = defaultRoutes.find(r => r.id === id);
+    return {
+      id,
+      file: `https://api.crosscountryapp.com/courses/${id}/geometries`,
+      color: known?.color || fallbackColors[index % fallbackColors.length],
+      name: known?.name || `Course ${id}`
+    };
+  });
+}
+
+const routes = getRoutesFromQuery();
+
+// Calculate Haversine distance between two lat/lon points (km)
 function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
+  const R = 6371; // km radius
   const toRad = deg => deg * Math.PI / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
@@ -25,6 +51,7 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 }
 
 function drawAxes(maxDist, minElev, maxElev) {
+  // X axis label
   const xLabel = document.createElementNS(svgNS, "text");
   xLabel.setAttribute("x", margin.left + plotWidth / 2);
   xLabel.setAttribute("y", svgHeight - 20);
@@ -33,6 +60,7 @@ function drawAxes(maxDist, minElev, maxElev) {
   xLabel.textContent = "Distance (km)";
   svg.appendChild(xLabel);
 
+  // Y axis label
   const yLabel = document.createElementNS(svgNS, "text");
   yLabel.setAttribute("x", 15);
   yLabel.setAttribute("y", margin.top + plotHeight / 2);
@@ -42,6 +70,7 @@ function drawAxes(maxDist, minElev, maxElev) {
   yLabel.textContent = "Elevation (m)";
   svg.appendChild(yLabel);
 
+  // X axis ticks and labels
   for (let i = 0; i <= 10; i++) {
     const x = margin.left + (plotWidth / 10) * i;
     const label = (maxDist * i / 10).toFixed(1);
@@ -63,6 +92,7 @@ function drawAxes(maxDist, minElev, maxElev) {
     svg.appendChild(text);
   }
 
+  // Y axis ticks and labels
   for (let j = 0; j <= 5; j++) {
     const y = margin.top + (plotHeight / 5) * j;
     const elev = (maxElev - ((maxElev - minElev) * j / 5)).toFixed(0);
@@ -87,62 +117,68 @@ function drawAxes(maxDist, minElev, maxElev) {
 
 async function loadElevation(route) {
   const res = await fetch(route.file);
+  if (!res.ok) {
+    console.warn(`Failed to load route ${route.name} from ${route.file}`);
+    return { elevations: [], distances: [] };
+  }
   const json = await res.json();
 
   const distances = [];
   const elevations = [];
   let totalDist = 0;
 
+  // Assuming first doc, first feature is route line
   for (const feature of json.docs[0].features) {
-  const coords = feature.geometry.coordinates;
+    const coords = feature.geometry.coordinates;
 
-  for (let i = 0; i < coords.length; i++) {
-    const coord = coords[i];
-    if (!Array.isArray(coord) || coord.length < 2) continue;
+    for (let i = 0; i < coords.length; i++) {
+      const coord = coords[i];
+      if (!Array.isArray(coord) || coord.length < 2) continue;
 
-    const [lon, lat, ele = 0] = coord;
-    const elevation = typeof ele === "number" ? ele : 0;
+      const [lon, lat, ele = 0] = coord;
+      // Melbourne elevation fixed to zero, others use ele if number
+      const elevation = route.name === "Melbourne" ? 0 : (typeof ele === "number" ? ele : 0);
 
-    if (i > 0 || distances.length > 0) {
-      const [prevLon, prevLat] = i > 0 ? coords[i - 1] : coords[0];
-      totalDist += haversineDistance(prevLat, prevLon, lat, lon);
+      // Calculate cumulative distance
+      if (i > 0 || distances.length > 0) {
+        const [prevLon, prevLat] = i > 0 ? coords[i - 1] : coords[0];
+        totalDist += haversineDistance(prevLat, prevLon, lat, lon);
+      }
+
+      distances.push(totalDist);
+      elevations.push(elevation);
     }
-
-    distances.push(totalDist);
-    elevations.push(elevation);
   }
-}
-
-  if (route.name === "Bramham") {
-  console.log("Bramham elevations (first 10):", elevations.slice(0, 10));
-  console.log("Bramham max elevation:", Math.max(...elevations));
-}
 
   const minElev = Math.min(...elevations);
   const maxElev = Math.max(...elevations);
   const elevRange = maxElev - minElev || 1;
 
+  // Convert to SVG points
   const points = distances.map((d, i) => {
     const x = margin.left + (d / totalDist) * plotWidth;
     const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
     return [x, y];
   });
 
+  // Draw shaded area under the curve
   const pathData = points.map((p, i) => i === 0 ? `M ${p[0]} ${p[1]}` : `L ${p[0]} ${p[1]}`).join(" ");
+  const shaded = document.createElementNS(svgNS, "path");
+  shaded.setAttribute("d", pathData + ` L ${points[points.length - 1][0]} ${svgHeight - margin.bottom} L ${points[0][0]} ${svgHeight - margin.bottom} Z`);
+  shaded.setAttribute("fill", route.color);
+  shaded.setAttribute("opacity", 0.1);
+  svg.appendChild(shaded);
+
+  // Draw line path
   const path = document.createElementNS(svgNS, "path");
   path.setAttribute("d", pathData);
   path.setAttribute("stroke", route.color);
   path.setAttribute("fill", "none");
   path.setAttribute("stroke-width", "2");
-  path.setAttribute("class", `route-line route-${route.name}`);
+  path.setAttribute("class", `route-line route-${route.name.replace(/\s/g, "-")}`);
   svg.appendChild(path);
 
-  const shaded = document.createElementNS(svgNS, "path");
-  shaded.setAttribute("d", pathData + ` L ${points[points.length - 1][0]} ${svgHeight - margin.bottom} L ${points[0][0]} ${svgHeight - margin.bottom} Z`);
-  shaded.setAttribute("fill", route.color);
-  shaded.setAttribute("opacity", 0.1);
-  svg.insertBefore(shaded, path);
-
+  // Add invisible circles for tooltip interaction
   points.forEach((p, i) => {
     const circle = document.createElementNS(svgNS, "circle");
     circle.setAttribute("cx", p[0]);
@@ -163,6 +199,7 @@ async function loadElevation(route) {
       tooltip.innerHTML = `<strong>${route.name}</strong><br>Distance: ${distances[i].toFixed(2)} km<br>Elevation: ${elevations[i].toFixed(1)} m`;
       tooltip.style.display = "block";
     });
+
     circle.addEventListener("mouseleave", () => {
       tooltip.style.display = "none";
     });
@@ -170,32 +207,56 @@ async function loadElevation(route) {
     svg.appendChild(circle);
   });
 
+  // Add route to legend
   const legend = document.getElementById("legend");
   const legendItem = document.createElement("span");
   legendItem.className = "legend-item";
   legendItem.style.color = route.color;
   legendItem.textContent = route.name;
-  legendItem.dataset.route = route.name;
+  legendItem.dataset.route = route.name.replace(/\s/g, "-");
+  legendItem.style.cursor = "pointer";
+
   legendItem.addEventListener("click", () => {
-    const path = document.querySelector(`.route-${route.name}`);
+    const path = document.querySelector(`.route-${legendItem.dataset.route}`);
+    if (!path) return;
     const visible = path.style.display !== "none";
     path.style.display = visible ? "none" : "inline";
+
+    // Also toggle shaded path with same color (opacity 0.1)
+    const shadedPaths = Array.from(svg.querySelectorAll("path")).filter(p =>
+      p.getAttribute("fill") === route.color && p.getAttribute("opacity") === "0.1");
+    shadedPaths.forEach(sp => {
+      sp.style.display = visible ? "none" : "inline";
+    });
+
     legendItem.classList.toggle("inactive", visible);
   });
+
   legend.appendChild(legendItem);
 
   return { elevations, distances };
 }
 
 async function drawAllRoutes() {
+  // Clear SVG & legend
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const legend = document.getElementById("legend");
+  legend.innerHTML = "";
+
   const allElevs = [];
   const allDists = [];
+
+  // Load each route and draw
   for (const route of routes) {
     const { elevations, distances } = await loadElevation(route);
     allElevs.push(...elevations);
     allDists.push(...distances);
   }
-  drawAxes(Math.max(...allDists), Math.min(...allElevs), Math.max(...allElevs));
+
+  // Draw axes after routes to not cover paths
+  if (allDists.length > 0 && allElevs.length > 0) {
+    drawAxes(Math.max(...allDists), Math.min(...allElevs), Math.max(...allElevs));
+  }
 }
 
 drawAllRoutes();
