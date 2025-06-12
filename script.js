@@ -98,8 +98,8 @@ async function loadElevation(route) {
 
     for (let i = 0; i < coords.length; i++) {
       const coord = coords[i];
+      
       if (!Array.isArray(coord) || coord.length < 2) continue;
-
       const [lon, lat, ele = 0] = coord;
       const elevation = typeof ele === "number" ? ele : 0;
   
