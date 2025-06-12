@@ -120,7 +120,7 @@ async function loadElevation(route) {
     }
   }
 
-  const minElev = Math.min(...elevations);
+  const minElev = 0;
   const maxElev = Math.max(...elevations);
   const elevRange = maxElev - minElev || 1;
 
