@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cross Country Elevation Profiles</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Elevation Profiles</h1>
-  <div id="legend"></div>
-  <svg id="elevation" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet"></svg>
-  <div id="tooltip" class="tooltip"></div>
-  
+  <h1 class="graph-label">Elevation Graph</h1>
+
+  <!-- SVG Element where the graph will be drawn -->
+  <svg id="elevation" width="800" height="400" viewBox="0 0 800 600"></svg>
+
+  <!-- Tooltip that will show information on hover -->
+  <div id="tooltip"></div>
+
+  <!-- Route Toggle Legend -->
+  <div id="legend" class="route-toggle"></div>
+
+  <!-- JavaScript that needs to run after the DOM is ready -->
   <script src="script.js"></script>
 </body>
 </html>
