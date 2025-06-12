@@ -1,7 +1,13 @@
-const defaultRoutes = [
+const Routes = [
   { file: "https://api.crosscountryapp.com/courses/gcptey/geometries", id: "gcptey", color: "blue", name: "Melbourne" },
   { file: "https://api.crosscountryapp.com/courses/wplcez/geometries", id: "wplcez", color: "red", name: "Bromont" },
   { file: "https://api.crosscountryapp.com/courses/vdwk2d/geometries", id: "vdwk2d", color: "green", name: "Bramham" }
+];
+
+const defaultRoutes = [
+  { id: "gcptey", color: "blue", name: "Melbourne" },
+  { id: "wplcez", color: "red", name: "Bromont" },
+  { id: "vdwk2d", color: "green", name: "Bramham" }
 ];
 
 function getRoutesFromQuery() {
@@ -36,13 +42,73 @@ const plotWidth = svgWidth - margin.left - margin.right;
 const plotHeight = svgHeight - margin.top - margin.bottom;
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
+  const R = 6371; // km
   const toRad = d => d * Math.PI / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat / 2) ** 2 +
             Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function drawAxes(maxDist, minElev, maxElev) {
+  const elevRange = maxElev - minElev || 1;
+  for (let i = 0; i <= 10; i++) {
+    const x = margin.left + (plotWidth / 10) * i;
+    const label = (maxDist * i / 10).toFixed(1);
+    const tick = document.createElementNS(svgNS, "line");
+    tick.setAttribute("x1", x);
+    tick.setAttribute("y1", svgHeight - margin.bottom);
+    tick.setAttribute("x2", x);
+    tick.setAttribute("y2", svgHeight - margin.bottom + 6);
+    tick.setAttribute("class", "axis-tick");
+    svg.appendChild(tick);
+
+    const text = document.createElementNS(svgNS, "text");
+    text.setAttribute("x", x);
+    text.setAttribute("y", svgHeight - margin.bottom + 22);
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("class", "axis-label");
+    text.textContent = `${label} km`;
+    svg.appendChild(text);
+  }
+
+  for (let j = 0; j <= 5; j++) {
+    const y = margin.top + (plotHeight / 5) * j;
+    const elev = (maxElev - (elevRange * j / 5)).toFixed(0);
+    const tick = document.createElementNS(svgNS, "line");
+    tick.setAttribute("x1", margin.left - 6);
+    tick.setAttribute("y1", y);
+    tick.setAttribute("x2", margin.left);
+    tick.setAttribute("y2", y);
+    tick.setAttribute("class", "axis-tick");
+    svg.appendChild(tick);
+
+    const label = document.createElementNS(svgNS, "text");
+    label.setAttribute("x", margin.left - 10);
+    label.setAttribute("y", y + 4);
+    label.setAttribute("text-anchor", "end");
+    label.setAttribute("class", "axis-label");
+    label.textContent = `${elev} m`;
+    svg.appendChild(label);
+  }
+
+  const xLabel = document.createElementNS(svgNS, "text");
+  xLabel.setAttribute("x", margin.left + plotWidth / 2);
+  xLabel.setAttribute("y", svgHeight - 20);
+  xLabel.setAttribute("text-anchor", "middle");
+  xLabel.setAttribute("class", "axis-label");
+  xLabel.textContent = "Distance (km)";
+  svg.appendChild(xLabel);
+
+  const yLabel = document.createElementNS(svgNS, "text");
+  yLabel.setAttribute("x", 15);
+  yLabel.setAttribute("y", margin.top + plotHeight / 2);
+  yLabel.setAttribute("transform", `rotate(-90 15,${margin.top + plotHeight / 2})`);
+  yLabel.setAttribute("text-anchor", "middle");
+  yLabel.setAttribute("class", "axis-label");
+  yLabel.textContent = "Elevation (m)";
+  svg.appendChild(yLabel);
 }
 
 async function fetchRouteData(route) {
@@ -54,20 +120,22 @@ async function fetchRouteData(route) {
   const elevations = [];
 
   let totalDist = 0;
+
   for (let i = 0; i < coords.length; i++) {
     const coord = coords[i];
-    
-    // Check if coordinate is malformed
-    if (coord.length < 3) {
+
+    // Check if the coordinate is an array and contains 3 elements (lon, lat, elevation)
+    if (!Array.isArray(coord) || coord.length < 3) {
       console.warn(`Malformed coordinate entry at index ${i}:`, coord);
-      continue; // Skip malformed entry
+      continue; // Skip malformed entry and move to the next
     }
 
     const [lon, lat, ele = 0] = coord;
 
-    // If the route is Melbourne, set elevation to 0
+    // Set elevation to 0 for Melbourne, else use the actual elevation
     const elevation = route.name === "Melbourne" ? 0 : ele;
 
+    // Calculate the distance for this coordinate if not the first one
     if (i > 0) {
       const [prevLon, prevLat] = coords[i - 1];
       totalDist += haversineDistance(prevLat, prevLon, lat, lon);
@@ -79,7 +147,6 @@ async function fetchRouteData(route) {
 
   return { route, coords, distances, elevations, totalDist };
 }
-
 
 async function drawAllRoutes() {
   const allData = await Promise.all(routes.map(fetchRouteData));
@@ -122,12 +189,13 @@ async function drawAllRoutes() {
       circle.setAttribute("fill", route.color);
       circle.setAttribute("opacity", 0);
       circle.addEventListener("mouseenter", () => {
-        const ptDist = distances[i].toFixed(2);
-        const ptElev = elevations[i].toFixed(1);
-        tooltip.textContent = `${route.name}: ${ptDist} km - ${ptElev} m`;
+        const pt = svg.createSVGPoint();
+        pt.x = p[0]; pt.y = p[1];
+        const screenPt = pt.matrixTransform(svg.getScreenCTM());
+        tooltip.style.top = `${screenPt.y + window.scrollY + 5}px`;
+        tooltip.style.left = `${screenPt.x + window.scrollX + 5}px`;
         tooltip.style.display = "block";
-        tooltip.style.left = `${event.pageX + 5}px`;
-        tooltip.style.top = `${event.pageY + 5}px`;
+        tooltip.innerHTML = `${route.name}<br />${(distances[i] / 1000).toFixed(2)} km<br />${elevations[i]} m`;
       });
       circle.addEventListener("mouseleave", () => {
         tooltip.style.display = "none";
@@ -137,19 +205,4 @@ async function drawAllRoutes() {
   }
 }
 
-function drawAxes(maxDist, minElev, maxElev) {
-  const xScale = d3.scaleLinear().domain([0, maxDist]).range([margin.left, margin.left + plotWidth]);
-  const yScale = d3.scaleLinear().domain([maxElev, minElev]).range([margin.top, margin.top + plotHeight]);
-
-  const xAxis = d3.axisBottom(xScale).ticks(5);
-  const yAxis = d3.axisLeft(yScale).ticks(5);
-
-  const xAxisGroup = svg.appendChild(document.createElementNS(svgNS, "g"));
-  xAxisGroup.setAttribute("transform", `translate(0, ${svgHeight - margin.bottom})`);
-  d3.select(xAxisGroup).call(xAxis);
-
-  const yAxisGroup = svg.appendChild(document.createElementNS(svgNS, "g"));
-  d3.select(yAxisGroup).call(yAxis);
-}
-
-drawAllRoutes();
+document.addEventListener("DOMContentLoaded", drawAllRoutes);
