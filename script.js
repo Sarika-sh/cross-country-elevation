@@ -94,25 +94,24 @@ async function loadElevation(route) {
   let totalDist = 0;
 
   for (const feature of json.docs[0].features) {
-    const coords = feature.geometry.coordinates;
+  const coords = feature.geometry.coordinates;
 
-    for (let i = 0; i < coords.length; i++) {
-      const coord = coords[i];
-      
-      if (!Array.isArray(coord) || coord.length < 2) continue;
-      const [lon, lat, ele = 0] = coord;
-      const elevation = typeof ele === "number" ? ele : 0;
-  
-      if (i > 0 || distances.length > 0) {
+  for (let i = 0; i < coords.length; i++) {
+    const coord = coords[i];
+    if (!Array.isArray(coord) || coord.length < 2) continue;
+
+    const [lon, lat, ele = 0] = coord;
+    const elevation = typeof ele === "number" ? ele : 0;
+
+    if (i > 0 || distances.length > 0) {
       const [prevLon, prevLat] = i > 0 ? coords[i - 1] : coords[0];
-        totalDist += haversineDistance(prevLat, prevLon, lat, lon);
-      }
-
-      distances.push(totalDist);
-      elevations.push(elevation);
+      totalDist += haversineDistance(prevLat, prevLon, lat, lon);
     }
-  }
 
+    distances.push(totalDist);
+    elevations.push(elevation);
+  }
+}
   const minElev = Math.min(...elevations);
   const maxElev = Math.max(...elevations);
   const elevRange = maxElev - minElev || 1;
