@@ -3,7 +3,6 @@ const Routes = [
   { file: "https://api.crosscountryapp.com/courses/wplcez/geometries", id: "wplcez", color: "red", name: "Bromont" },
   { file: "https://api.crosscountryapp.com/courses/vdwk2d/geometries", id: "vdwk2d", color: "green", name: "Bramham" }
 ];
-
 const defaultRoutes = [
   { id: "gcptey", color: "blue", name: "Melbourne" },
   { id: "wplcez", color: "red", name: "Bromont" },
@@ -124,25 +123,25 @@ async function fetchRouteData(route) {
   for (let i = 0; i < coords.length; i++) {
     const coord = coords[i];
 
-    // Validate coordinate entry
-    if (!Array.isArray(coord) || coord.length < 3) {
+    // Check if coord is an array and contains at least 3 elements (lon, lat, elevation)
+    if (Array.isArray(coord) && coord.length >= 3) {
+      const [lon, lat, ele = 0] = coord;
+
+      // For Melbourne, explicitly set elevation to 0
+      const elevation = route.name === "Melbourne" ? 0 : ele;
+
+      // Calculate the distance for each coordinate pair
+      if (i > 0) {
+        const [prevLon, prevLat] = coords[i - 1];
+        totalDist += haversineDistance(prevLat, prevLon, lat, lon);
+      }
+
+      distances.push(totalDist);
+      elevations.push(elevation);
+    } else {
+      // Log malformed coordinate entry
       console.warn(`Malformed coordinate entry at index ${i}:`, coord);
-      continue; // Skip malformed coordinate entry
     }
-
-    const [lon, lat, ele = 0] = coord;
-
-    // For Melbourne, explicitly set elevation to 0
-    const elevation = route.name === "Melbourne" ? 0 : ele;
-
-    // Calculate the distance for each coordinate pair
-    if (i > 0) {
-      const [prevLon, prevLat] = coords[i - 1];
-      totalDist += haversineDistance(prevLat, prevLon, lat, lon);
-    }
-
-    distances.push(totalDist);
-    elevations.push(elevation);
   }
 
   return { route, coords, distances, elevations, totalDist };
