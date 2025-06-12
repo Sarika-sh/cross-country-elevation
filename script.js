@@ -35,6 +35,7 @@ const svgHeight = svg.viewBox.baseVal.height;
 const plotWidth = svgWidth - margin.left - margin.right;
 const plotHeight = svgHeight - margin.top - margin.bottom;
 
+// Haversine distance function
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const toRad = d => d * Math.PI / 180;
@@ -43,6 +44,19 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   const a = Math.sin(dLat / 2) ** 2 +
             Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Smoothing function for elevation data
+function smoothElevationData(elevations, windowSize = 5) {
+  const smoothed = [];
+  for (let i = 0; i < elevations.length; i++) {
+    const start = Math.max(0, i - Math.floor(windowSize / 2));
+    const end = Math.min(elevations.length, i + Math.ceil(windowSize / 2));
+    const window = elevations.slice(start, end);
+    const avg = window.reduce((sum, val) => sum + val, 0) / window.length;
+    smoothed.push(avg);
+  }
+  return smoothed;
 }
 
 function drawAxes(maxDist, minElev, maxElev) {
@@ -115,7 +129,11 @@ async function fetchRouteData(route) {
   let totalDist = 0;
   for (let i = 0; i < coords.length; i++) {
     const [lon, lat, ele = 0] = coords[i];
-    const elevation = route.name === "Melbourne" ? 0 : (typeof ele === "number" ? ele : 0);
+
+    // Modify elevations based on course name
+    const elevation = route.name === "Melbourne" ? 0 : 
+                      (typeof ele === "number" ? ele : 0); // No cap for Bramham elevation anymore
+    
     if (i > 0) {
       const [prevLon, prevLat] = coords[i - 1];
       totalDist += haversineDistance(prevLat, prevLon, lat, lon);
@@ -139,9 +157,13 @@ async function drawAllRoutes() {
 
   for (const { route, distances, elevations, totalDist } of allData) {
     const elevRange = maxElev - minElev || 1;
+    
+    // Smooth out elevation data to reduce noise
+    const smoothedElevations = smoothElevationData(elevations);
+
     const points = distances.map((d, i) => {
       const x = margin.left + (d / totalDist) * plotWidth;
-      const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
+      const y = margin.top + plotHeight * (1 - (smoothedElevations[i] - minElev) / elevRange);
       return [x, y];
     });
 
@@ -173,7 +195,7 @@ async function drawAllRoutes() {
         const screenPt = pt.matrixTransform(svg.getScreenCTM());
         tooltip.style.left = `${screenPt.x + 10}px`;
         tooltip.style.top = `${screenPt.y}px`;
-        tooltip.innerHTML = `<strong>${route.name}</strong><br>Distance: ${distances[i].toFixed(2)} km<br>Elevation: ${elevations[i].toFixed(1)} m`;
+        tooltip.innerHTML = `<strong>${route.name}</strong><br>Distance: ${distances[i].toFixed(2)} km<br>Elevation: ${smoothedElevations[i].toFixed(1)} m`;
         tooltip.style.display = "block";
       });
       circle.addEventListener("mouseleave", () => tooltip.style.display = "none");
