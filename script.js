@@ -1,5 +1,6 @@
 const routes = [
   { file: "https://api.crosscountryapp.com/courses/gcptey/geometries", id: "gcptey", color: "blue", name: "Melbourne" },
+      { file: "https://api.crosscountryapp.com/courses/wplcez/geometries", id: "wplcez", color: "red", name: "Bromont" },
   { file: "https://api.crosscountryapp.com/courses/vdwk2d/geometries", id: "vdwk2d", color: "green", name: "Bramham" },
 ];
 
@@ -128,7 +129,7 @@ async function loadElevation(route) {
   
   const points = distances.map((d, i) => {
     const x = margin.left + (d / totalDist) * plotWidth;
-    const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange);
+    const y = margin.top + plotHeight * (1 - (elevations[i] - minElev) / elevRange) + (plotHeight - elevRange);
 
       // If the route is Bramham, 
       if (route.name === "Bramham") {
