@@ -115,7 +115,7 @@ async function fetchRouteData(route) {
   const res = await fetch(route.file);
   const json = await res.json();
   const coords = json.docs.flatMap(doc => doc.features.flatMap(f => f.geometry.coordinates));
-  
+
   const distances = [];
   const elevations = [];
 
@@ -124,7 +124,7 @@ async function fetchRouteData(route) {
   for (let i = 0; i < coords.length; i++) {
     const coord = coords[i];
 
-    // Check if the coordinate is an array and contains 3 elements (lon, lat, elevation)
+    // Check if the coordinate is an array with at least 3 elements (lon, lat, elevation)
     if (!Array.isArray(coord) || coord.length < 3) {
       console.warn(`Malformed coordinate entry at index ${i}:`, coord);
       continue; // Skip malformed entry and move to the next
@@ -190,7 +190,8 @@ async function drawAllRoutes() {
       circle.setAttribute("opacity", 0);
       circle.addEventListener("mouseenter", () => {
         const pt = svg.createSVGPoint();
-        pt.x = p[0]; pt.y = p[1];
+        pt.x = p[0];
+        pt.y = p[1];
         const screenPt = pt.matrixTransform(svg.getScreenCTM());
         tooltip.style.top = `${screenPt.y + window.scrollY + 5}px`;
         tooltip.style.left = `${screenPt.x + window.scrollX + 5}px`;
