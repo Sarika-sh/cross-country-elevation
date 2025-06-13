@@ -1,8 +1,3 @@
-const routes = [
-  { file: "https://api.crosscountryapp.com/courses/gcptey/geometries", id: "gcptey", color: "blue", name: "Melbourne" },
-       { file: "https://api.crosscountryapp.com/courses/vdwk2d/geometries", id: "vdwk2d", color: "green", name: "Bramham" },
-];
-
 const svg = document.getElementById("elevation");
 const tooltip = document.getElementById("tooltip");
 const svgNS = "http://www.w3.org/2000/svg";
@@ -12,6 +7,20 @@ const svgWidth = svg.viewBox.baseVal.width;
 const svgHeight = svg.viewBox.baseVal.height;
 const plotWidth = svgWidth - margin.left - margin.right;
 const plotHeight = svgHeight - margin.top - margin.bottom;
+
+// Get course IDs from query string
+const defaultIds = ["gcptey", "vdwk2d"]; // fallback
+const queryIds = new URLSearchParams(window.location.search).get("ids");
+const courseIds = queryIds ? queryIds.split(",") : defaultIds;
+
+// Assign colors automatically
+const colorPalette = ["blue", "red", "green", "orange", "purple", "teal", "brown"];
+const routes = courseIds.map((id, index) => ({
+  file: `https://api.crosscountryapp.com/courses/${id}/geometries`,
+  id: id,
+  color: colorPalette[index % colorPalette.length],
+}));
+
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of Earth in kilometers
@@ -102,8 +111,8 @@ async function loadElevation(route) {
       const [lon, lat, ele = 0] = coord;
       let elevation = ele;
 
-      // If the route is Melbourne, set the elevation to 0
-      if (route.name === "Melbourne") {
+      // If the route is gcptey, set the elevation to 0
+       if (route.id === "gcptey") {
         elevation = 0;
       }
 
@@ -123,7 +132,7 @@ async function loadElevation(route) {
   const maxElev = Math.max(...elevations);
   const elevRange = maxElev - minElev || 1;
 
-  console.log("City min max ele:", minElev, maxElev, elevRange);
+  console.log("City min max ele:", minElev, maxElev, elevRange, plotHeight);
 
   
   const points = distances.map((d, i) => {
@@ -138,7 +147,7 @@ async function loadElevation(route) {
   path.setAttribute("stroke", route.color);
   path.setAttribute("fill", "none");
   path.setAttribute("stroke-width", "2");
-  path.setAttribute("class", `route-line route-${route.name}`);
+  path.setAttribute("class", `route-line route-${route.id}`);
   svg.appendChild(path);
 
   const shaded = document.createElementNS(svgNS, "path");
@@ -164,7 +173,7 @@ async function loadElevation(route) {
 
       tooltip.style.left = `${screenPt.x + 10}px`;
       tooltip.style.top = `${screenPt.y}px`;
-      tooltip.innerHTML = `<strong>${route.name}</strong><br>Distance: ${distances[i].toFixed(2)} km<br>Elevation: ${elevations[i].toFixed(1)} m`;
+      tooltip.innerHTML = `<strong>${route.id}</strong><br>Distance: ${distances[i].toFixed(2)} km<br>Elevation: ${elevations[i].toFixed(1)} m`;
       tooltip.style.display = "block";
     });
     circle.addEventListener("mouseleave", () => {
@@ -178,10 +187,10 @@ async function loadElevation(route) {
   const legendItem = document.createElement("span");
   legendItem.className = "legend-item";
   legendItem.style.color = route.color;
-  legendItem.textContent = route.name;
-  legendItem.dataset.route = route.name;
+  legendItem.textContent = route.id;
+  legendItem.dataset.route = route.id;
   legendItem.addEventListener("click", () => {
-    const path = document.querySelector(`.route-${route.name}`);
+    const path = document.querySelector(`.route-${route.id}`);
     const visible = path.style.display !== "none";
     path.style.display = visible ? "none" : "inline";
     legendItem.classList.toggle("inactive", visible);
