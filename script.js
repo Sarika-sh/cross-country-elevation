@@ -183,19 +183,41 @@ async function loadElevation(route) {
     svg.appendChild(circle);
   });
 
-  const legend = document.getElementById("legend");
-  const legendItem = document.createElement("span");
-  legendItem.className = "legend-item";
-  legendItem.style.color = route.color;
-  legendItem.textContent = route.id;
-  legendItem.dataset.route = route.id;
-  legendItem.addEventListener("click", () => {
+const legend = document.getElementById("legend");
+const legendItem = document.createElement("span");
+legendItem.className = "legend-item";
+legendItem.style.color = route.color;
+legendItem.textContent = route.name || route.id;
+legendItem.dataset.route = route.id;
+
+// Toggle visibility on click
+legendItem.addEventListener("click", () => {
+  const path = document.querySelector(`.route-${route.id}`);
+  const visible = path.style.display !== "none";
+  path.style.display = visible ? "none" : "inline";
+  legendItem.classList.toggle("inactive", visible);
+});
+
+// Change color on double-click
+legendItem.addEventListener("dblclick", () => {
+  const newColor = prompt(`Enter new color for ${route.id}`, route.color);
+  if (newColor) {
+    // Update line color
     const path = document.querySelector(`.route-${route.id}`);
-    const visible = path.style.display !== "none";
-    path.style.display = visible ? "none" : "inline";
-    legendItem.classList.toggle("inactive", visible);
-  });
-  legend.appendChild(legendItem);
+    path.setAttribute("stroke", newColor);
+
+    // Update all matching circles
+    document.querySelectorAll(`.route-${route.id} ~ circle`).forEach(c => {
+      c.setAttribute("fill", newColor);
+    });
+
+    // Update legend color
+    legendItem.style.color = newColor;
+  }
+});
+
+legend.appendChild(legendItem);
+
 
   return { elevations, distances };
 }
