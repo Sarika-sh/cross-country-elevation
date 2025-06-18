@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cross Country Elevation Profiles</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+</head>
+<body>
+  <h1 class="graph-label">Elevation Profiles</h1>
+
+    <!-- SVG Element where the graph will be drawn -->
+  <svg id="elevation-chart" viewBox="0 0 800 300" width="800" height="300"></svg>
+
+  <!-- Tooltip that will show information on hover -->
+  <div id="tooltip"></div>
+
+  <!-- Route Toggle Legend -->
+  <div id="legend" class="route-toggle"></div>
+
+  <!-- Load Google Maps JS API with callback -->
+  <script
+    async
+    defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAsNikZE5WT807istWFnmiJycqMHGfGodw&callback=initMap">
+  </script>
+
+  <script src="script.js"></script>
+</body>
+</html>
