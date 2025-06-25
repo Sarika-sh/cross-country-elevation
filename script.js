@@ -1,3 +1,20 @@
+let googleMapsLoaded = false;
+let elevator;
+
+window.initMap = async function () {
+  googleMapsLoaded = true;
+  elevator = new google.maps.ElevationService();
+  const elevation = await elevator.getElevationForLocations({
+    locations: [
+      {lat: -33, lng: 150},
+      {lat: -33.1, lng: 150.1}
+    ]
+  }); 
+  console.log("elevation from Google", elevation);
+  console.log("Google Maps API loaded and initialized");  // Add this line for debugging
+}
+
+
 const Routes = [
   { file: "https://api.crosscountryapp.com/courses/gcptey/geometries", id: "gcptey", color: "blue", name: "Melbourne" },
   { file: "https://api.crosscountryapp.com/courses/wplcez/geometries", id: "wplcez", color: "red", name: "Bromont" },
@@ -113,7 +130,14 @@ function drawAxes(maxDist, minElev, maxElev) {
 async function fetchRouteData(route) {
   const res = await fetch(route.file);
   const json = await res.json();
-  const coords = json.docs.flatMap(doc => doc.features.flatMap(f => f.geometry.coordinates));
+  
+
+ const coords = json.docs.find(
+      doc => doc.properties.type === "MAIN_ROUTE"
+  ).features.filter(
+      feature => feature.geometry.type === "LineString"
+  ).flatMap(
+      feature => feature.geometry.coordinates);
 
   const distances = [];
   const elevations = [];
@@ -122,9 +146,7 @@ async function fetchRouteData(route) {
 
   for (let i = 0; i < coords.length; i++) {
     const coord = coords[i];
-
-    // Check if coord is an array and contains at least 3 elements (lon, lat, elevation)
-    if (Array.isArray(coord) && coord.length >= 3) {
+    
       const [lon, lat, ele = 0] = coord;
 
       // For Melbourne, explicitly set elevation to 0
@@ -138,10 +160,7 @@ async function fetchRouteData(route) {
 
       distances.push(totalDist);
       elevations.push(elevation);
-    } else {
-      // Log malformed coordinate entry
-      console.warn(`Malformed coordinate entry at index ${i}:`, coord);
-    }
+    
   }
 
   return { route, coords, distances, elevations, totalDist };
