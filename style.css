@@ -1,6 +1,5 @@
 /* General styles for the page */
 body {
-  font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
   display: flex;
@@ -10,6 +9,13 @@ body {
   min-height: 100vh;
   background-color: #f4f4f4;
   box-sizing: border-box;
+}
+
+#map {
+  height: 400px;
+  width: 100%;
+  margin: 0 auto;
+  display: block;
 }
 
 /* Title for the graph */
@@ -39,6 +45,12 @@ body {
   transition: opacity 0.2s ease-in-out, transform 0.1s ease-in-out;
 }
 
+#elevation {
+  width: 100%;
+  height: auto;
+  max-height: 600px;
+}
+
 /* Tooltip arrow for better UX */
 #tooltip::after {
   content: '';
@@ -62,7 +74,7 @@ svg {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   width: 100%; /* Ensure full width for responsiveness */
   max-width: 900px; /* Ensure it's responsive */
-  height: auto;
+  height: 400px;
 }
 
 /* Styling for the route toggle controls */
@@ -72,6 +84,7 @@ svg {
   flex-direction: column;
   align-items: flex-start;
 }
+
 
 .route-toggle label {
   font-size: 16px;
@@ -89,7 +102,29 @@ svg {
   color: #007BFF;
 }
 
+.route-line {
+  stroke-width: 2;
+  fill: none;
+}
+
+.route-point:hover {
+  r: 5; /* increase radius on hover */
+  stroke-width: 2;
+  stroke: black;
+  transition: r 0.2s ease;
+}
+
 /* Styling for Legend Item */
+
+#legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  font-family: sans-serif;
+  gap: 15px;
+}
+
 .legend-item {
   cursor: pointer;
   margin: 5px;
@@ -109,7 +144,7 @@ svg {
   transform: scale(1.05); /* Slight scale for interaction */
 }
 
-/* Media queries for better responsiveness */
+/* Mediarender queries for better responsiveness */
 @media (max-width: 768px) {
   .route-toggle {
     align-items: center;
