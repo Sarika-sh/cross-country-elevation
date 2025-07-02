@@ -5,19 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cross Country Elevation Profiles</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />  
 </head>
 <body>
   <h1>Elevation Profiles</h1>
+  <div id="map" style="width: 100%; height: 400px;"></div>
   <div id="legend"></div>
   <svg id="elevation" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet"></svg>
   <div id="tooltip" class="tooltip"></div>
+
+  <script src="script.js"></script>
 
     <script
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB3atakTNdVy8cn-CExnQvJc2Ns9PyN1pE&callback=initMap&v=weekly"
       defer
     ></script>
   
-  <script src="script.js"></script>
+  
 </body>
 </html>
