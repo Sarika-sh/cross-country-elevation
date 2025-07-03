@@ -4,20 +4,26 @@
   <meta charset="UTF-8" />
   <title>Cross Country Elevation Profiles</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />  
 </head>
 <body>
-  <h1>Elevation Profiles</h1>
+  <h1>Cross Country Elevation Profiles</h1>
   
-  <!-- SVG Element where the graph will be drawn -->
-  <svg id="elevation" viewBox="0 0 800 300" width="800" height="300"></svg>
+  <svg id="elevation" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
 
-  <!-- Tooltip that will show information on hover -->
-  <div id="tooltip"></div>
+    <div id="legend" style="margin-top: 10px; font-family: sans-serif;"></div>
 
-  <!-- Route Toggle Legend -->
-  <div id="legend" class="route-toggle"></div>
+  <div id="tooltip" class="tooltip"></div>
 
-  <script src="script.js"></script>
+    <script src="script.js"></script>
+
+    <script
+    
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB3atakTNdVy8cn-CExnQvJc2Ns9PyN1pE&callback=initMap&v=weekly"
+      defer
+    ></script>
+  
+  
 </body>
 </html>
 
