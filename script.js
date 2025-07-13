@@ -5,15 +5,15 @@ window.initMap = async function () {
   googleMapsLoaded = true;
   elevator = new google.maps.ElevationService();
 
-   const map = new google.maps.Map(document.getElementById("map"), {
-    center: { lat: -33.05, lng: 150.05 },
-    zoom: 12,
-  });
+  //  const map = new google.maps.Map(document.getElementById("map"), {
+  //   center: { lat: -33.05, lng: 150.05 },
+  //   zoom: 12,
+  // });
   
   const elevation = await elevator.getElevationForLocations({
     locations: [
       {lat: -33, lng: 150},
-      {lat: -33.1, lng: 150.1}
+      {lng: 150.1, lat: -33.1}
     ]
   }); 
   console.log("elevation from Google", elevation);
@@ -149,65 +149,6 @@ function drawAxes(maxDist, minElev, maxElev) {
   legend.appendChild(legendItem);
 }
 
-async function drawAllRoutes() {
-  svg.innerHTML = "";
-  document.getElementById("legend").innerHTML = "";
-  const elevsArrays = [];
-  const distsArrays = [];
-
-  // First load all data
-  const courseData = [];
-  for (const route of routes) {
-    const res = await fetch(route.file);
-    const json = await res.json();
-
-    const distances = [];
-    const elevations = [];
-    let totalDist = 0;
-
-    for (const feature of json.docs[0].features) {
-      const coords = feature.geometry.coordinates;
-
-      for (let i = 0; i < coords.length; i++) {
-        const coord = coords[i];
-        if (!Array.isArray(coord) || coord.length < 2) continue;
-
-        const [lon, lat, ele = 0] = coord;
-        let elevation = route.id === "gcptey" ? 0 : ele; // If the route is gcptey, set the elevation to 0
-
-        if (i > 0) {
-          const [prevLon, prevLat] = coords[i - 1];
-          if (prevLat && prevLon && lat && lon) {
-            totalDist += haversineDistance(prevLat, prevLon, lat, lon);
-          }
-        }
-
-        distances.push(totalDist);
-        elevations.push(elevation);
-      }
-    }
-
-    elevsArrays.push(elevations);
-    distsArrays.push(distances);
-    courseData.push({ route, elevations, distances });
-  }
-
-  // Compute global min/max
-  const allDists = distsArrays.flat(); // [[1, 2], [4, 5]] -> [1, 2, 4, 5]
-  const allElevs = elevsArrays.flat();
-  const maxDist = Math.max(...allDists);
-  const minElev = Math.min(...allElevs);
-  const maxElev = Math.max(...allElevs);
-
-  // Draw axes once
-  drawAxes(maxDist, minElev, maxElev);
-
-  // Plot each course using shared scale
-  for (const { route, elevations, distances } of courseData) {
-    drawCourse(route, elevations, distances, minElev, maxElev, maxDist);
-  }
-}
-
 function drawAxes(maxDist, minElev, maxElev) {
   // X-axis label
   const xLabel = document.createElementNS(svgNS, "text");
@@ -286,6 +227,7 @@ async function getGoogleElevations(locations) {
 }
 
 
+
 async function fetchRouteData(route) {
   const res = await fetch(route.file);
   const json = await res.json();
@@ -298,7 +240,10 @@ async function fetchRouteData(route) {
       feature => feature.geometry.coordinates);
 
       // Convert to Google API format
-  const locations = coords.map(coord => ({ lat: coord[1], lng: coord[0] }));
+  const locations = coords.map(position => ({ lat: position[1], lng: position[0] }));
+  
+ 
+  console.log( "array, object", coords, locations);
 
   // Fetch elevation from Google
   let googleElevations = [];
