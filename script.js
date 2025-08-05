@@ -147,37 +147,43 @@ async function fetchRouteData(route) {
   ).flatMap(
       feature => feature.geometry.coordinates);
 
+  const totalPoints = coords.length;
+  const maxPoints = 512;
+  let sampledCoords = [];
+
+  if (totalPoints <= maxPoints) {
+    sampledCoords = coords;
+  } else {
+    const step = totalPoints / maxPoints;
+    for (let i = 0; i < maxPoints; i++) {
+      const index = Math.floor(i * step);
+      sampledCoords.push(coords[index]);
+    }
+  }
+
       // Convert to Google API format
-  const locations = coords.map(coord => ({ lat: coord[1], lng: coord[0] }));
+  const locations = sampledCoords.map(coord => ({ lat: coord[1], lng: coord[0] }));
 
   // Fetch elevation from Google
   let googleElevations = [];
   try {
-    // If more than 512 points, split into batches
-    const batchSize = 512;
-    for (let i = 0; i < locations.length; i += batchSize) {
-      const batch = locations.slice(i, i + batchSize);
-      const batchResults = await getGoogleElevations(batch);
-      googleElevations.push(...batchResults);
-    }
+     googleElevations = await getGoogleElevations(locations); // ✅ Single API call
   } catch (err) {
     console.error("Elevation API error:", err);
   }
 
   const distances = [];
   const elevations = [];
-
   let totalDist = 0;
 
-  for (let i = 0; i < coords.length; i++) {
-    const coord = coords[i];
-    const [lon, lat = 0] = coord;
+  for (let i = 0; i < sampledCoords.length; i++) {
+    const [lon, lat = 0] = sampledCoords[i];
 
        const elevation = googleElevations[i]?.elevation ?? 0;
 
       // Calculate the distance for each coordinate pair
       if (i > 0) {
-        const [prevLon, prevLat] = coords[i - 1];
+        const [prevLon, prevLat] = sampledCoords[i - 1];
         totalDist += haversineDistance(prevLat, prevLon, lat, lon);
       }
       distances.push(totalDist); 
@@ -185,9 +191,8 @@ async function fetchRouteData(route) {
   
   }
 
-  return { route, coords, distances, elevations, totalDist };
+  return { route, coords: sampledCoords, distances, elevations, totalDist };
 }
-
   function renderLegend(routeData) {
   const legend = document.getElementById("legend");
   legend.innerHTML = ""; // Clear existing
