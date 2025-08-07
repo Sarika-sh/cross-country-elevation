@@ -6,13 +6,13 @@ window.initMap = async function () {
    await drawAllRoutes(); 
 
     // Dummy elevation call for testing:
-    const elevation = await elevator.getElevationForLocations({
-    locations: [
-      {lat: -33, lng: 150},
-      {lat: -33.1, lng: 150.1}
-    ]
-  }); 
-  console.log("test elevation", elevation);
+    // const elevation = await elevator.getElevationForLocations({
+    // locations: [
+    // {lat: -33, lng: 150},
+    // {lat: -33.1, lng: 150.1}
+    //]
+  //}); 
+  // console.log("test elevation", elevation);
   console.log("Google Maps API loaded and initialized");  // Add this line for debugging
 };
 
@@ -134,7 +134,6 @@ async function getGoogleElevations(locations) {
   });
 }
 
-
 async function fetchRouteData(route) {
   console.log(`Fetching route: ${route.id}`);
   const res = await fetch(route.file);
@@ -160,14 +159,19 @@ async function fetchRouteData(route) {
       sampledCoords.push(coords[index]);
     }
   }
-
+ 
       // Convert to Google API format
   const locations = sampledCoords.map(coord => ({ lat: coord[1], lng: coord[0] }));
-
+  // Debug block 
+ const DEBUG = true;
+if (DEBUG) {
+      // Debug Tool to double-confirm you're under 512 
+  console.log(`Route ${route.id} has ${locations.length} elevation points`);
+}
   // Fetch elevation from Google
   let googleElevations = [];
   try {
-     googleElevations = await getGoogleElevations(locations); // ✅ Single API call
+     googleElevations = await getGoogleElevations(locations); // API Call
   } catch (err) {
     console.error("Elevation API error:", err);
   }
