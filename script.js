@@ -43,7 +43,6 @@ const routes = courseIds.map((id, index) => ({
 }));
 
 const svg = document.getElementById("elevation");
-const tooltip = document.getElementById("tooltip");
 const svgNS = "http://www.w3.org/2000/svg";
 
 const margin = { top: 20, right: 20, bottom: 60, left: 70 };
@@ -207,7 +206,11 @@ async function fetchRouteData(route) {
     elevations.push(elevation);
   }
 
-  return { route, coords: sampledCoords, distances, elevations, totalDist };
+  const baseElevation = elevations[0];
+const relativeElevations = elevations.map(e => e - baseElevation);
+
+return { route, coords: sampledCoords, distances, elevations: relativeElevations, totalDist };
+
 }
 function renderLegend(routeData) {
   const legend = document.getElementById("legend");
@@ -250,9 +253,13 @@ async function drawAllRoutes() {
   const routeData = await Promise.all(routes.map(fetchRouteData));
 
   let maxDist = 0;
-  let minElev = Math.min(...routeData.flatMap((r) => r.elevations));
-  minElev = Math.min(minElev, 5); // Set minimum visual floor to 5m
-  let maxElev = Math.max(...routeData.flatMap((r) => r.elevations));
+let allElevations = routeData.flatMap((r) => r.elevations);
+let minElev = Math.min(...allElevations);
+let maxElev = Math.max(...allElevations);
+
+const maxAbsElev = Math.max(Math.abs(minElev), Math.abs(maxElev));
+minElev = -maxAbsElev;
+maxElev = maxAbsElev;
 
   routeData.forEach(({ distances }) => {
     maxDist = Math.max(maxDist, distances[distances.length - 1]);
@@ -266,11 +273,10 @@ async function drawAllRoutes() {
   routeData.forEach(({ route, distances, elevations }) => {
     const line = document.createElementNS(svgNS, "polyline");
     // Note: distances and maxDist are in kilometers
-    const points = distances.map((d, i) => {
-      const x = margin.left + (plotWidth * d) / maxDist;
-      const y =
-        margin.top +
-        (plotHeight * (maxElev - elevations[i])) / (maxElev - minElev);
+    
+    const points = distances.map((dist, i) => {
+    const x = margin.left + (plotWidth * dist) / maxDist;
+    const y = margin.top + (plotHeight * (maxElev - elevations[i])) / (maxElev - minElev);
       return `${x},${y}`;
     });
 
@@ -281,38 +287,36 @@ async function drawAllRoutes() {
     svg.appendChild(line);
 
     // Add route points as small circles
-    distances.forEach((dist, i) => {
-      const x = margin.left + (plotWidth * dist) / maxDist;
-      const y =
-        margin.top +
-        (plotHeight * (maxElev - elevations[i])) / (maxElev - minElev);
+    //distances.forEach((dist, i) => {
+    //const x = margin.left + (plotWidth * dist) / maxDist;
+    //const y =  margin.top +(plotHeight * (maxElev - elevations[i])) / (maxElev - minElev);
 
-      const circle = document.createElementNS(svgNS, "circle");
-      circle.setAttribute("cx", x);
-      circle.setAttribute("cy", y);
-      circle.setAttribute("r", 3);
-      circle.setAttribute("fill", route.color);
-      circle.setAttribute("class", "route-point");
+    //const circle = document.createElementNS(svgNS, "circle");
+    //circle.setAttribute("cx", x);
+    //circle.setAttribute("cy", y);
+    //circle.setAttribute("r", 3);
+    //circle.setAttribute("fill", route.color);
+    //circle.setAttribute("class", "route-point");
 
-      circle.addEventListener("mouseenter", () => {
-        const pt = svg.createSVGPoint();
-        pt.x = x;
-        pt.y = y;
-        const screenPt = pt.matrixTransform(svg.getScreenCTM());
-        tooltip.style.top = `${screenPt.y + window.scrollY + 5}px`;
-        tooltip.style.left = `${screenPt.x + window.scrollX + 5}px`;
-        tooltip.style.display = "block";
-        tooltip.innerHTML = `${route.name}<br />${dist.toFixed(
-          2
-        )} km<br />${elevations[i].toFixed(1)} m`;
-      });
+    //circle.addEventListener("mouseenter", () => {
+    //const pt = svg.createSVGPoint();
+    //pt.x = x;
+    //pt.y = y;
+    //const screenPt = pt.matrixTransform(svg.getScreenCTM());
+    //tooltip.style.top = `${screenPt.y + window.scrollY + 5}px`;
+    //tooltip.style.left = `${screenPt.x + window.scrollX + 5}px`;
+    //tooltip.style.display = "block";
+    //tooltip.innerHTML = `${route.name}<br />${dist.toFixed(
+    //2
+    //)} km<br />${elevations[i].toFixed(1)} m`;
+    //  });
 
-      circle.addEventListener("mouseleave", () => {
-        tooltip.style.display = "none";
-      });
+    //circle.addEventListener("mouseleave", () => {
+    //tooltip.style.display = "none";
+    //});
 
-      svg.appendChild(circle);
-    });
-  });
-  renderLegend(routeData);
+    //svg.appendChild(circle);
+   //});
+});
+renderLegend(routeData);
 }
