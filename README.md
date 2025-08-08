@@ -1,39 +1,33 @@
-# 📈 Cross Country Elevation Profiles
-Visualize elevation profiles for cross-country routes for Melbourne, Bromont & Bramham using the Google Maps Elevation API.
-This tool fetches route data, samples coordinates efficiently, and plots elevation vs. distance in a clean, interactive SVG chart.
+# Cross Country Elevation Profiles
+
+Visualize elevation profiles for cross-country routes using the Google Maps Elevation API.  
+This tool fetches route data, samples coordinates, and plots elevation vs. distance in an interactive SVG chart.
+
+## 📸 Preview
 
 # ![preview](https://github.com/user-attachments/assets/2ad80862-6a95-4b52-bf79-22053adc7306)
 
-# 🌍 Project Purpose
-This project is designed to:
+## 🌍 Purpose
 
-Load cross-country course geometries from an external API
+- Load cross-country course geometries from an external API
+- Sample coordinates (max 512 for Google API)
+- Fetch elevation data with a single API call
+- Plot a detailed SVG elevation profile in-browser
 
-Sample route points (max 512) for optimal performance
+## ⚙️ Features
 
-Call Google’s Elevation API only once per route
-
-Render a clear elevation profile using SVG in the browser
-
-# ⚙️ Features
-🗺️ Supports multiple route files (Melbourne, Bramham, Bromont.)
-
-📏 Smart coordinate sampling to stay within API limits
-
-📊 SVG-based elevation chart with interactive tooltips
-
-🧭 Toggle route visibility & change colors via legend
-
-🐞 Debug logging (e.g., number of sampled points)
+- 🗺 Supports multiple routes (Melbourne, Bromont, Bramham)
+- 📏 Efficient coordinate sampling
+- 📊 Interactive SVG chart with tooltips
+- 🎨 Clickable legend to toggle visibility or update color
+- 🐞 Built-in debug logging
 
 # 🛠 Tech Stack
-JavaScript (ES6+)
 
-Google Maps Elevation API
-
-SVG for chart rendering
-
-HTML/CSS
+- JavaScript (ES6+)
+- Google Maps Elevation API
+- SVG for chart rendering
+- HTML/CSS
 
 # 🔗 Live Demo - https://sarika-sh.github.io/cross-country-elevation/
 
