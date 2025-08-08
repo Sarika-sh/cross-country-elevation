@@ -1,36 +1,73 @@
-# Cross Country Elevation Profiles
+# 🏇 Cross Country Elevation Profiles
 
-Visualize elevation profiles for cross-country routes using the Google Maps Elevation API.  
-This tool fetches route data, samples coordinates, and plots elevation vs. distance in an interactive SVG chart.
+A lightweight, browser-based tool that lets event riders visualize **elevation over distance** for **equestrian cross-country courses**.
 
-## 📸 Preview
+It fetches course data from the [CrossCountry App](https://www.crosscountryapp.com/) API and plots it as a clean elevation chart to help riders preview terrain changes before riding.
 
-# ![preview](https://github.com/user-attachments/assets/2ad80862-6a95-4b52-bf79-22053adc7306)
+---
 
-## 🌍 Purpose
+## 🔗 Live Demo
 
-- Load cross-country course geometries from an external API
-- Sample coordinates (max 512 for Google API)
-- Fetch elevation data with a single API call
-- Plot a detailed SVG elevation profile in-browser
+👉 [Try the Live Demo](https://sarika-sh.github.io/cross-country-elevation/)  
 
-## ⚙️ Features
+---
 
-- 🗺 Supports multiple routes (Melbourne, Bromont, Bramham)
-- 📏 Efficient coordinate sampling
-- 📊 Interactive SVG chart with tooltips
-- 🎨 Clickable legend to toggle visibility or update color
-- 🐞 Built-in debug logging
+## 📌 How It Works
 
-# 🛠 Tech Stack
+To view specific courses:
 
-- JavaScript (ES6+)
-- Google Maps Elevation API
-- SVG for chart rendering
-- HTML/CSS
+1. Visit [CrossCountryApp Courses](https://www.crosscountryapp.com/courses)
+2. Click any **"View"** button  
+3. Copy the **last part** of the URL (e.g., `gcptey`)
+4. Paste it into the demo link like this:
 
-# 🔗 Live Demo - https://sarika-sh.github.io/cross-country-elevation/
+https://sarika-sh.github.io/cross-country-elevation/?ids=gcptey,vdwk2d
 
 
+You can load **multiple course IDs** by separating them with commas.
+
+➡️ Example format:  
+https://your-site.com/index.html?ids=courseId1,courseId2
+
+
+
+---
+
+## 🎯 Features
+
+- 📉 Plots elevation charts for cross-country horse riding courses
+- 🎨 Each course shown in a unique color
+- 🔍 Hover tooltips with distance + elevation
+- 📍 Clickable legend to toggle visibility
+- 🎚 Relative elevation comparison (starts all lines from the same Y-axis point)
+- 💡 Lightweight & responsive
+
+---
+
+## 🛠️ Built With
+
+- **HTML5**
+- **CSS3**
+- **JavaScript**
+- **Google Maps Elevation API**
+- **CrossCountry App API**
+
+---
+
+## 📁 Folder Structure
+
+📦 cross-country-elevation
+├── index.html
+├── script.js
+├── style.css
+└── README.md
+
+
+---
+
+## 🙌 Acknowledgments
+
+- [CrossCountry App](https://www.crosscountryapp.com/) for course data
+- [Google Maps Platform](https://developers.google.com/maps/documentation/elevation/start) for Elevation API
 
 
