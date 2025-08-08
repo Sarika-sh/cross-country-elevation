@@ -1,32 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Cross Country Elevation Profiles</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />  
-</head>
-<body>
-  <h1>Cross Country Elevation Profiles</h1>
-  
-  <svg id="elevation" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet"></svg>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cross Country Elevation Profiles</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  </head>
+  <body>
+    <h1>Cross Country Elevation Profiles</h1>
 
-    <div id="legend" style="margin-top: 10px; font-family: sans-serif;"></div>
+    <svg
+      id="elevation"
+      viewBox="0 0 800 600"
+      preserveAspectRatio="xMidYMid meet"
+    ></svg>
 
-  <div id="tooltip" class="tooltip"></div>
+    <div id="legend" style="margin-top: 10px; font-family: sans-serif"></div>
+
+    <div id="tooltip" class="tooltip"></div>
 
     <script src="script.js"></script>
 
     <!-- Include this LAST -->
-<script
-  async
-  defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB3atakTNdVy8cn-CExnQvJc2Ns9PyN1pE&callback=initMap&v=weekly&loading=async"
-></script>
-  
-</body>
+    <script
+      async
+      defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB3atakTNdVy8cn-CExnQvJc2Ns9PyN1pE&callback=initMap&v=weekly&loading=async"
+    ></script>
+  </body>
 </html>
-
-
-
-
