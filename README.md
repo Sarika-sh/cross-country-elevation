@@ -14,17 +14,19 @@ It fetches course data from the [CrossCountry App](https://www.crosscountryapp.c
 
 ## 📌 How It Works
 
-1. Go to: [CrossCountryApp Courses](https://www.crosscountryapp.com/courses)
-2. Click **View** on any course
-3. Copy the **last segment** of the URL (e.g., `gcptey`)
-4. Add it to the live link like so:
+To view course elevation profiles, you can use the live demo with the following course IDs, which are known to work well:
 
-https://sarika-sh.github.io/cross-country-elevation/?ids=gcptey
+- `gcptey` (Melbourne)  
+- `vdwk2d` (Bramham)  
+- `wplcez` (Bromont)  
 
-To compare **multiple courses**, separate IDs with commas:
+Use the live demo link with one or multiple IDs like this:  
+`https://sarika-sh.github.io/cross-country-elevation/?ids=gcptey`
 
-https://sarika-sh.github.io/cross-country-elevation/?ids=gcptey,vdwk2d,wplcez
+Or to compare multiple courses, separate IDs with commas:  
+`https://sarika-sh.github.io/cross-country-elevation/?ids=gcptey,vdwk2d,wplcez`
 
+> **Note:** Using other course IDs from the CrossCountry App may not always return data due to API limitations.
 
 ---
 
@@ -55,7 +57,6 @@ https://sarika-sh.github.io/cross-country-elevation/?ids=gcptey,vdwk2d,wplcez
 ├── script.js # Core logic (fetch, render, tooltips)
 ├── style.css # Styles for the app
 └── README.md # You're here!
-
 
 ---
 
