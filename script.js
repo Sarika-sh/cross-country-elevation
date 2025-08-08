@@ -3,35 +3,43 @@ let elevator;
 
 window.initMap = async function () {
   elevator = new google.maps.ElevationService();
-   await drawAllRoutes(); 
+  await drawAllRoutes();
 
-    // Dummy elevation call for testing:
-    // const elevation = await elevator.getElevationForLocations({
-    // locations: [
-    // {lat: -33, lng: 150},
-    // {lat: -33.1, lng: 150.1}
-    //]
-  //}); 
+  // Dummy elevation call for testing:
+  // const elevation = await elevator.getElevationForLocations({
+  // locations: [
+  // {lat: -33, lng: 150},
+  // {lat: -33.1, lng: 150.1}
+  //]
+  //});
   // console.log("test elevation", elevation);
-  console.log("Google Maps API loaded and initialized");  // Add this line for debugging
+  console.log("Google Maps API loaded and initialized"); // Add this line for debugging
 };
 
 const defaultIds = ["gcptey", "vdwk2d", "wplcez"];
 const queryIds = new URLSearchParams(window.location.search).get("ids");
 const courseIds = queryIds ? queryIds.split(",") : defaultIds;
 
-const colorPalette = ["blue", "red", "green", "orange", "purple", "teal", "brown"];
+const colorPalette = [
+  "blue",
+  "red",
+  "green",
+  "orange",
+  "purple",
+  "teal",
+  "brown",
+];
 const knownNames = {
   gcptey: "Melbourne",
   vdwk2d: "Bramham",
-  wplcez: "Bromont"
+  wplcez: "Bromont",
 };
 
 const routes = courseIds.map((id, index) => ({
   file: `https://api.crosscountryapp.com/courses/${id}/geometries`,
   id: id,
   color: colorPalette[index % colorPalette.length],
-  name: knownNames[id] || `Course ${id}`
+  name: knownNames[id] || `Course ${id}`,
 }));
 
 const svg = document.getElementById("elevation");
@@ -46,11 +54,12 @@ const plotHeight = svgHeight - margin.top - margin.bottom;
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of Earth in kilometers
-  const toRad = deg => deg * Math.PI / 180;
+  const toRad = (deg) => (deg * Math.PI) / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
-  const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); // Distance in kilometers
 }
 
@@ -66,20 +75,23 @@ function drawAxes(maxDist, minElev, maxElev) {
   xLabel.textContent = "Distance (km)";
   svg.appendChild(xLabel);
 
-   // Y-axis label
+  // Y-axis label
   const yLabel = document.createElementNS(svgNS, "text");
   yLabel.setAttribute("x", 15);
   yLabel.setAttribute("y", margin.top + plotHeight / 2);
-  yLabel.setAttribute("transform", `rotate(-90 15,${margin.top + plotHeight / 2})`);
+  yLabel.setAttribute(
+    "transform",
+    `rotate(-90 15,${margin.top + plotHeight / 2})`
+  );
   yLabel.setAttribute("text-anchor", "middle");
   yLabel.setAttribute("class", "axis-label");
   yLabel.textContent = "Elevation (m)";
   svg.appendChild(yLabel);
 
-    // X-axis ticks and labels
+  // X-axis ticks and labels
   for (let i = 0; i <= 10; i++) {
     const x = margin.left + (plotWidth / 10) * i;
-    const label = (maxDist * i / 10).toFixed(2);
+    const label = ((maxDist * i) / 10).toFixed(2);
     const tick = document.createElementNS(svgNS, "line");
     tick.setAttribute("x1", x);
     tick.setAttribute("y1", svgHeight - margin.bottom);
@@ -87,8 +99,7 @@ function drawAxes(maxDist, minElev, maxElev) {
     tick.setAttribute("y2", svgHeight - margin.bottom + 6);
     tick.setAttribute("class", "axis-tick");
     svg.appendChild(tick);
-  
-    
+
     const text = document.createElementNS(svgNS, "text");
     text.setAttribute("x", x);
     text.setAttribute("y", svgHeight - margin.bottom + 22);
@@ -98,10 +109,10 @@ function drawAxes(maxDist, minElev, maxElev) {
     svg.appendChild(text);
   }
 
-// Y-axis ticks and labels
+  // Y-axis ticks and labels
   for (let j = 0; j <= 5; j++) {
     const y = margin.top + (plotHeight / 5) * j;
-    const elev = (maxElev - ((maxElev - minElev) * j / 5)).toFixed(0);
+    const elev = (maxElev - ((maxElev - minElev) * j) / 5).toFixed(0);
 
     const tick = document.createElementNS(svgNS, "line");
     tick.setAttribute("x1", margin.left - 6);
@@ -119,7 +130,7 @@ function drawAxes(maxDist, minElev, maxElev) {
     label.textContent = `${elev} m`;
     svg.appendChild(label);
   }
-} 
+}
 
 async function getGoogleElevations(locations) {
   return new Promise((resolve, reject) => {
@@ -139,12 +150,10 @@ async function fetchRouteData(route) {
   const res = await fetch(route.file);
   const json = await res.json();
 
- const coords = json.docs.find(
-      doc => doc.properties.type === "MAIN_ROUTE"
-  ).features.filter(
-      feature => feature.geometry.type === "LineString"
-  ).flatMap(
-      feature => feature.geometry.coordinates);
+  const coords = json.docs
+    .find((doc) => doc.properties.type === "MAIN_ROUTE")
+    .features.filter((feature) => feature.geometry.type === "LineString")
+    .flatMap((feature) => feature.geometry.coordinates);
 
   const totalPoints = coords.length;
   const maxPoints = 512;
@@ -159,19 +168,23 @@ async function fetchRouteData(route) {
       sampledCoords.push(coords[index]);
     }
   }
- 
-      // Convert to Google API format
-  const locations = sampledCoords.map(coord => ({ lat: coord[1], lng: coord[0] }));
-  // Debug block 
- const DEBUG = true;
-if (DEBUG) {
-      // Debug Tool to double-confirm you're under 512 
-  console.log(`Route ${route.id} has ${locations.length} elevation points`);
-}
+
+  // Convert to Google API format
+  const locations = sampledCoords.map((coord) => ({
+    lat: coord[1],
+    lng: coord[0],
+  }));
+
+  // Debug block
+  const DEBUG = true;
+  if (DEBUG) {
+    // Debug Tool to double-confirm you're under 512
+    console.log(`Route ${route.id} has ${locations.length} elevation points`);
+  }
   // Fetch elevation from Google
   let googleElevations = [];
   try {
-     googleElevations = await getGoogleElevations(locations); // API Call
+    googleElevations = await getGoogleElevations(locations); // ✅ Single API call
   } catch (err) {
     console.error("Elevation API error:", err);
   }
@@ -183,32 +196,31 @@ if (DEBUG) {
   for (let i = 0; i < sampledCoords.length; i++) {
     const [lon, lat = 0] = sampledCoords[i];
 
-       const elevation = googleElevations[i]?.elevation ?? 0;
+    const elevation = googleElevations[i]?.elevation ?? 0;
 
-      // Calculate the distance for each coordinate pair
-      if (i > 0) {
-        const [prevLon, prevLat] = sampledCoords[i - 1];
-        totalDist += haversineDistance(prevLat, prevLon, lat, lon);
-      }
-      distances.push(totalDist); 
-      elevations.push(elevation);
-  
+    // Calculate the distance for each coordinate pair
+    if (i > 0) {
+      const [prevLon, prevLat] = sampledCoords[i - 1];
+      totalDist += haversineDistance(prevLat, prevLon, lat, lon);
+    }
+    distances.push(totalDist);
+    elevations.push(elevation);
   }
 
   return { route, coords: sampledCoords, distances, elevations, totalDist };
 }
-  function renderLegend(routeData) {
+function renderLegend(routeData) {
   const legend = document.getElementById("legend");
   legend.innerHTML = ""; // Clear existing
 
-    routeData.forEach(({ route }) => {
+  routeData.forEach(({ route }) => {
     const legendItem = document.createElement("span");
     legendItem.className = "legend-item";
     legendItem.style.color = route.color;
     legendItem.textContent = route.name || route.id;
     legendItem.dataset.route = route.id;
 
-     // Click to toggle visibility
+    // Click to toggle visibility
     legendItem.addEventListener("click", () => {
       const path = document.querySelector(`.route-${route.id}`);
       const visible = path?.style.display !== "none";
@@ -218,57 +230,63 @@ if (DEBUG) {
       }
     });
 
-
     // Double-click to change color
     legendItem.addEventListener("dblclick", () => {
-      const newColor = prompt(`Enter new color for ${route.name || route.id}:`, route.color);
+      const newColor = prompt(
+        `Enter new color for ${route.name || route.id}:`,
+        route.color
+      );
       if (newColor) {
         route.color = newColor;
         drawAllRoutes(); // Redraw with new color
       }
     });
 
-   legend.appendChild(legendItem);
+    legend.appendChild(legendItem);
   });
 }
 
-async function drawAllRoutes () {
-   const routeData = await Promise.all(routes.map(fetchRouteData));
+async function drawAllRoutes() {
+  const routeData = await Promise.all(routes.map(fetchRouteData));
 
   let maxDist = 0;
-  let minElev = Math.min(...routeData.flatMap(r => r.elevations));
+  let minElev = Math.min(...routeData.flatMap((r) => r.elevations));
   minElev = Math.min(minElev, 5); // Set minimum visual floor to 5m
-  let maxElev = Math.max(...routeData.flatMap(r => r.elevations));
+  let maxElev = Math.max(...routeData.flatMap((r) => r.elevations));
 
   routeData.forEach(({ distances }) => {
     maxDist = Math.max(maxDist, distances[distances.length - 1]);
   });
 
-console.log("maxDist:", maxDist);
+  console.log("maxDist:", maxDist);
   console.log("minElev:", minElev, "maxElev:", maxElev);
 
   drawAxes(maxDist, minElev, maxElev);
 
   routeData.forEach(({ route, distances, elevations }) => {
     const line = document.createElementNS(svgNS, "polyline");
-  // Note: distances and maxDist are in kilometers
-  const points = distances.map((d, i) => {
-     const x = margin.left + (plotWidth * d / maxDist);
-      const y = margin.top + (plotHeight * (maxElev - elevations[i]) / (maxElev - minElev));
+    // Note: distances and maxDist are in kilometers
+    const points = distances.map((d, i) => {
+      const x = margin.left + (plotWidth * d) / maxDist;
+      const y =
+        margin.top +
+        (plotHeight * (maxElev - elevations[i])) / (maxElev - minElev);
       return `${x},${y}`;
     });
-  
+
     line.setAttribute("points", points.join(" "));
     line.setAttribute("stroke", route.color);
     line.setAttribute("fill", "none");
-    line.setAttribute("class", `route-line route-${route.id}`); 
+    line.setAttribute("class", `route-line route-${route.id}`);
     svg.appendChild(line);
 
     // Add route points as small circles
     distances.forEach((dist, i) => {
-      const x = margin.left + (plotWidth * dist / maxDist);
-      const y = margin.top + (plotHeight * (maxElev - elevations[i]) / (maxElev - minElev));
-      
+      const x = margin.left + (plotWidth * dist) / maxDist;
+      const y =
+        margin.top +
+        (plotHeight * (maxElev - elevations[i])) / (maxElev - minElev);
+
       const circle = document.createElementNS(svgNS, "circle");
       circle.setAttribute("cx", x);
       circle.setAttribute("cy", y);
@@ -284,7 +302,9 @@ console.log("maxDist:", maxDist);
         tooltip.style.top = `${screenPt.y + window.scrollY + 5}px`;
         tooltip.style.left = `${screenPt.x + window.scrollX + 5}px`;
         tooltip.style.display = "block";
-        tooltip.innerHTML = `${route.name}<br />${dist.toFixed(2)} km<br />${elevations[i].toFixed(1)} m`;
+        tooltip.innerHTML = `${route.name}<br />${dist.toFixed(
+          2
+        )} km<br />${elevations[i].toFixed(1)} m`;
       });
 
       circle.addEventListener("mouseleave", () => {
@@ -294,5 +314,5 @@ console.log("maxDist:", maxDist);
       svg.appendChild(circle);
     });
   });
-   renderLegend(routeData);
+  renderLegend(routeData);
 }
