@@ -1,5 +1,5 @@
 # 📈 Cross Country Elevation Profiles
-Visualize elevation profiles for cross-country routes using the Google Maps Elevation API.
+Visualize elevation profiles for cross-country routes for Melbourne, Bromont & Bramham using the Google Maps Elevation API.
 This tool fetches route data, samples coordinates efficiently, and plots elevation vs. distance in a clean, interactive SVG chart.
 
 # ![preview](https://github.com/user-attachments/assets/2ad80862-6a95-4b52-bf79-22053adc7306)
