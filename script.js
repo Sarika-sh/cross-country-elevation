@@ -45,11 +45,11 @@ const routes = courseIds.map((id, index) => ({
 const svg = document.getElementById("elevation");
 const svgNS = "http://www.w3.org/2000/svg";
 
-const margin = { top: 20, right: 20, bottom: 60, left: 70 };
-const svgWidth = svg.viewBox.baseVal.width;
-const svgHeight = svg.viewBox.baseVal.height;
-const plotWidth = svgWidth - margin.left - margin.right;
-const plotHeight = svgHeight - margin.top - margin.bottom;
+const padding = { top: 50, right: 50, bottom: 90, left: 100 };
+const svgWidth = svg.clientWidth;
+const svgHeight = svg.clientHeight;
+const plotWidth = svgWidth - padding.left - padding.right;
+const plotHeight = svgHeight - padding.top - padding.bottom;
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of Earth in kilometers
@@ -67,7 +67,7 @@ function drawAxes(maxDist, minElev, maxElev) {
 
   // X-axis label
   const xLabel = document.createElementNS(svgNS, "text");
-  xLabel.setAttribute("x", margin.left + plotWidth / 2);
+  xLabel.setAttribute("x", padding.left + plotWidth / 2);
   xLabel.setAttribute("y", svgHeight - 10);
   xLabel.setAttribute("text-anchor", "middle");
   xLabel.setAttribute("class", "axis-label");
@@ -77,10 +77,10 @@ function drawAxes(maxDist, minElev, maxElev) {
   // Y-axis label
   const yLabel = document.createElementNS(svgNS, "text");
   yLabel.setAttribute("x", 15);
-  yLabel.setAttribute("y", margin.top + plotHeight / 2);
+  yLabel.setAttribute("y", padding.top + plotHeight / 2);
   yLabel.setAttribute(
     "transform",
-    `rotate(-90 15,${margin.top + plotHeight / 2})`
+    `rotate(-90 15,${padding.top + plotHeight / 2})`
   );
   yLabel.setAttribute("text-anchor", "middle");
   yLabel.setAttribute("class", "axis-label");
@@ -89,19 +89,19 @@ function drawAxes(maxDist, minElev, maxElev) {
 
   // X-axis ticks and labels
   for (let i = 0; i <= 10; i++) {
-    const x = margin.left + (plotWidth / 10) * i;
+    const x = padding.left + (plotWidth / 10) * i;
     const label = ((maxDist * i) / 10).toFixed(2);
     const tick = document.createElementNS(svgNS, "line");
     tick.setAttribute("x1", x);
-    tick.setAttribute("y1", svgHeight - margin.bottom);
+    tick.setAttribute("y1", svgHeight - padding.bottom);
     tick.setAttribute("x2", x);
-    tick.setAttribute("y2", svgHeight - margin.bottom + 6);
+    tick.setAttribute("y2", svgHeight - padding.bottom + 6);
     tick.setAttribute("class", "axis-tick");
     svg.appendChild(tick);
 
     const text = document.createElementNS(svgNS, "text");
     text.setAttribute("x", x);
-    text.setAttribute("y", svgHeight - margin.bottom + 22);
+    text.setAttribute("y", svgHeight - padding.bottom + 22);
     text.setAttribute("text-anchor", "middle");
     text.setAttribute("class", "axis-label");
     text.textContent = `${label} km`;
@@ -110,19 +110,19 @@ function drawAxes(maxDist, minElev, maxElev) {
 
   // Y-axis ticks and labels
   for (let j = 0; j <= 5; j++) {
-    const y = margin.top + (plotHeight / 5) * j;
+    const y = padding.top + (plotHeight / 5) * j;
     const elev = (maxElev - ((maxElev - minElev) * j) / 5).toFixed(0);
 
     const tick = document.createElementNS(svgNS, "line");
-    tick.setAttribute("x1", margin.left - 6);
+    tick.setAttribute("x1", padding.left - 6);
     tick.setAttribute("y1", y);
-    tick.setAttribute("x2", margin.left);
+    tick.setAttribute("x2", padding.left);
     tick.setAttribute("y2", y);
     tick.setAttribute("class", "axis-tick");
     svg.appendChild(tick);
 
     const label = document.createElementNS(svgNS, "text");
-    label.setAttribute("x", margin.left - 10);
+    label.setAttribute("x", padding.left - 10);
     label.setAttribute("y", y + 4);
     label.setAttribute("text-anchor", "end");
     label.setAttribute("class", "axis-label");
@@ -275,8 +275,8 @@ maxElev = maxAbsElev;
     // Note: distances and maxDist are in kilometers
     
     const points = distances.map((dist, i) => {
-    const x = margin.left + (plotWidth * dist) / maxDist;
-    const y = margin.top + (plotHeight * (maxElev - elevations[i])) / (maxElev - minElev);
+    const x = padding.left + (plotWidth * dist) / maxDist;
+    const y = padding.top + (plotHeight * (maxElev - elevations[i])) / (maxElev - minElev);
       return `${x},${y}`;
     });
 
@@ -320,3 +320,4 @@ maxElev = maxAbsElev;
 });
 renderLegend(routeData);
 }
+
