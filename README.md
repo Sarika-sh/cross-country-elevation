@@ -1,78 +1,86 @@
-# 🏇 Cross Country Elevation Profiles
+# Cross Country Elevation Profiles
 
-A lightweight, browser-based tool that lets **event riders** visualize **elevation over distance** for **equestrian cross-country courses**.
+A lightweight, browser-based tool that allows **event riders** to visualize **elevation over distance** for **equestrian cross-country courses**.
 
-It fetches course data from the [CrossCountry App](https://www.crosscountryapp.com/) API and plots it as a clean, interactive elevation chart to help riders preview terrain before riding.
-
----
-
-## 🔗 Live Demo
-
-👉 [Try It Live](https://sarika-sh.github.io/cross-country-elevation/)  
+This application retrieves course data from the [CrossCountry App](https://www.crosscountryapp.com/) API and renders it as a clean, interactive elevation chart—helping riders preview the terrain before a ride.
 
 ---
 
-## 📌 How It Works
+## Live Demo
 
-To view course elevation profiles, you can use the live demo with the following course IDs, which are known to work well:
+Access the application here:  
+**[View Demo](https://sarika-sh.github.io/cross-country-elevation/)**
+
+---
+
+## How It Works
+
+To explore course elevation profiles, use the demo link with the following sample course IDs:
 
 - `gcptey` (Melbourne)  
 - `vdwk2d` (Bramham)  
-- `wplcez` (Bromont)  
+- `wplcez` (Bromont)
 
-Use the live demo link with one or multiple IDs like this:  
+**Single course example:**  
 `https://sarika-sh.github.io/cross-country-elevation/?ids=gcptey`
 
-Or to compare multiple courses, separate IDs with commas:  
+**Multiple course comparison:**  
 `https://sarika-sh.github.io/cross-country-elevation/?ids=gcptey,vdwk2d,wplcez`
 
-> **Note:** Using other course IDs from the CrossCountry App may not always return data due to API limitations.
+> *Note: Other course IDs may not return data consistently due to API constraints.*
 
 ---
 
-## 🎯 Features
+## Features
 
-- 📉 Elevation graphs for **horse riding cross-country** courses
-- 📍 Relative elevation mode: All routes start at the same height for easy comparison
-- 🎨 Unique color for each route
-- 🧭 Interactive legend (click to toggle lines)
-- 🧠 Hover tooltips with **distance** + **elevation**
-- 📱 Fully responsive & mobile-friendly
+- Interactive elevation graphs for equestrian cross-country routes  
+- Relative elevation mode: All routes aligned to start at the same elevation for visual consistency  
+- Unique color assigned per route  
+- Clickable legend to toggle individual lines  
+- Hover tooltips displaying distance and elevation  
+- Fully responsive layout for desktop and mobile devices  
 
 ---
 
-## 🛠️ Built With
+## Technologies Used
 
-- **HTML5** + **CSS3**
-- **JavaScript (Vanilla)**
-- [Google Maps Elevation API](https://developers.google.com/maps/documentation/elevation/start)
+- HTML5  
+- CSS3  
+- JavaScript (Vanilla)  
+- [Google Maps Elevation API](https://developers.google.com/maps/documentation/elevation/start)  
 - [CrossCountry App API](https://www.crosscountryapp.com/)
 
 ---
 
-## 📁 Project Structure
+cross-country-elevation
 
-📦 cross-country-elevation
-├── index.html # Main HTML page
-├── script.js # Core logic (fetch, render, tooltips)
-├── style.css # Styles for the app
-└── README.md # You're here!
+├── index.html # Main HTML entry point
 
----
+├── script.js # Core logic (data fetch, rendering, interactivity)
 
-## 💡 Future Improvements (Ideas)
+├── style.css # Application styles
 
-- Option to switch between **relative** and **absolute** elevation modes
-- Better mobile support & touch interactions
-- Download graph as PNG
-- Shareable links with pre-loaded IDs
+└── README.md # Project documentation
+
 
 ---
 
-## 🙏 Acknowledgements
+## Planned Enhancements
 
-- [CrossCountry App](https://www.crosscountryapp.com/) – for course data
-- [Google Maps Platform](https://developers.google.com/maps/documentation/elevation/start) – for elevation data
+- Toggle between **relative** and **absolute** elevation modes  
+- Improved mobile and touch interaction support  
+- Option to export graphs as PNG images  
+- Shareable URLs with preloaded course selections  
 
 ---
+
+## Acknowledgements
+
+- [CrossCountry App](https://www.crosscountryapp.com/) – for providing access to course data  
+- [Google Maps Platform](https://developers.google.com/maps/documentation/elevation/start) – for elevation data services  
+
+---
+
+
+## Project Structure
 
